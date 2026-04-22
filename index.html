@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOODRUN - Retro Arcade Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <div class="bg-grid"></div>
+
+    <div class="app-container">
+        <!-- 主页 -->
+        <div class="page home-page active" id="homePage">
+            <div class="header-area">
+                <div class="slogan-container" id="slogan">
+                    <div class="slogan-main">MOOD<br>RUN</div>
+                    <div class="slogan-sub">HERE IT IS</div>
+                </div>
+                <div class="decoration-icon">👾</div>
+            </div>
+            <div class="bottom-area">
+                <div class="button-group">
+                    <button class="retro-btn" onclick="app.goToMood()">Start Running</button>
+                    <button class="retro-btn secondary" onclick="app.goToMeditation()">Meditation Mode</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 心情选择页面 -->
+        <div class="page mood-page" id="moodPage">
+            <h2 class="page-title">HOW DO YOU FEEL?</h2>
+            <div class="mood-grid" id="moodGrid">
+                <div class="mood-item" data-mood="stressed" onclick="app.selectMood('stressed')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="8" y="7" width="5" height="5" fill="#ff3f8f"/>
+                        <rect x="11" y="10" width="5" height="5" fill="#ff3f8f"/>
+                        <rect x="24" y="7" width="5" height="5" fill="#ff3f8f"/>
+                        <rect x="21" y="10" width="5" height="5" fill="#ff3f8f"/>
+                        <rect x="9" y="23" width="4" height="3" fill="#ff3f8f"/>
+                        <rect x="13" y="26" width="4" height="3" fill="#ff3f8f"/>
+                        <rect x="17" y="23" width="4" height="3" fill="#ff3f8f"/>
+                        <rect x="21" y="26" width="4" height="3" fill="#ff3f8f"/>
+                        <rect x="25" y="23" width="4" height="3" fill="#ff3f8f"/>
+                    </svg>
+                    <span>STRESSED</span>
+                </div>
+                <div class="mood-item" data-mood="anxious" onclick="app.selectMood('anxious')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="8" y="8" width="8" height="8" fill="#00d4c0"/>
+                        <rect x="24" y="8" width="8" height="8" fill="#00d4c0"/>
+                        <rect x="5" y="20" width="3" height="3" fill="#00d4c0"/>
+                        <rect x="32" y="20" width="3" height="3" fill="#00d4c0"/>
+                        <rect x="12" y="25" width="4" height="3" fill="#00d4c0"/>
+                        <rect x="16" y="27" width="4" height="3" fill="#00d4c0"/>
+                        <rect x="20" y="25" width="4" height="3" fill="#00d4c0"/>
+                        <rect x="24" y="27" width="4" height="3" fill="#00d4c0"/>
+                    </svg>
+                    <span>ANXIOUS</span>
+                </div>
+                <div class="mood-item" data-mood="tired" onclick="app.selectMood('tired')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="9" y="12" width="8" height="3" fill="#7e88a8"/>
+                        <rect x="23" y="12" width="8" height="3" fill="#7e88a8"/>
+                        <rect x="15" y="23" width="10" height="3" fill="#7e88a8"/>
+                        <rect x="14" y="26" width="12" height="4" fill="#7e88a8"/>
+                    </svg>
+                    <span>TIRED</span>
+                </div>
+                <div class="mood-item" data-mood="angry" onclick="app.selectMood('angry')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="7" y="8" width="8" height="3" fill="#ff4d5f"/>
+                        <rect x="25" y="8" width="8" height="3" fill="#ff4d5f"/>
+                        <rect x="9" y="11" width="6" height="6" fill="#ff4d5f"/>
+                        <rect x="25" y="11" width="6" height="6" fill="#ff4d5f"/>
+                        <rect x="11" y="27" width="6" height="3" fill="#ff4d5f"/>
+                        <rect x="17" y="24" width="6" height="3" fill="#ff4d5f"/>
+                        <rect x="23" y="27" width="6" height="3" fill="#ff4d5f"/>
+                    </svg>
+                    <span>ANGRY</span>
+                </div>
+                <div class="mood-item" data-mood="sad" onclick="app.selectMood('sad')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="10" y="10" width="6" height="6" fill="#4f7eff"/>
+                        <rect x="24" y="10" width="6" height="6" fill="#4f7eff"/>
+                        <rect x="25" y="18" width="3" height="5" fill="#4f7eff"/>
+                        <rect x="13" y="27" width="5" height="3" fill="#4f7eff"/>
+                        <rect x="18" y="24" width="5" height="3" fill="#4f7eff"/>
+                        <rect x="23" y="27" width="5" height="3" fill="#4f7eff"/>
+                    </svg>
+                    <span>SAD</span>
+                </div>
+                <div class="mood-item" data-mood="bored" onclick="app.selectMood('bored')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="10" y="12" width="7" height="2" fill="#8a92ad"/>
+                        <rect x="23" y="12" width="7" height="2" fill="#8a92ad"/>
+                        <rect x="18" y="18" width="4" height="4" fill="#8a92ad"/>
+                        <rect x="13" y="26" width="14" height="2" fill="#8a92ad"/>
+                    </svg>
+                    <span>BORED</span>
+                </div>
+                <div class="mood-item" data-mood="excited" onclick="app.selectMood('excited')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="10" y="7" width="3" height="9" fill="#ffd84d"/>
+                        <rect x="7" y="10" width="9" height="3" fill="#ffd84d"/>
+                        <rect x="24" y="7" width="3" height="9" fill="#ffd84d"/>
+                        <rect x="21" y="10" width="9" height="3" fill="#ffd84d"/>
+                        <rect x="11" y="23" width="18" height="3" fill="#ffd84d"/>
+                        <rect x="14" y="26" width="12" height="4" fill="#ffd84d"/>
+                    </svg>
+                    <span>EXCITED</span>
+                </div>
+                <div class="mood-item" data-mood="happy" onclick="app.selectMood('happy')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="9" y="10" width="6" height="6" fill="#ffe36d"/>
+                        <rect x="25" y="10" width="6" height="6" fill="#ffe36d"/>
+                        <rect x="9" y="22" width="4" height="3" fill="#ffe36d"/>
+                        <rect x="27" y="22" width="4" height="3" fill="#ffe36d"/>
+                        <rect x="13" y="25" width="14" height="3" fill="#ffe36d"/>
+                        <rect x="15" y="28" width="10" height="2" fill="#ffe36d"/>
+                    </svg>
+                    <span>HAPPY</span>
+                </div>
+                <div class="mood-item" data-mood="neutral" onclick="app.selectMood('neutral')">
+                    <svg class="mood-icon" viewBox="0 0 40 40">
+                        <rect x="10" y="10" width="6" height="6" fill="#8fa0c4"/>
+                        <rect x="24" y="10" width="6" height="6" fill="#8fa0c4"/>
+                        <rect x="12" y="26" width="16" height="3" fill="#8fa0c4"/>
+                    </svg>
+                    <span>NEUTRAL</span>
+                </div>
+            </div>
+            <div class="thought-section">
+                <label>WHAT'S ON YOUR MIND?</label>
+                <textarea class="thought-input" id="thoughtInput" placeholder="Write down your thoughts..."></textarea>
+            </div>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goHome()">BACK</button>
+                <button class="retro-btn" onclick="app.goToPlan()" id="moodNextBtn" disabled>CONTINUE</button>
+            </div>
+        </div>
+
+        <!-- 计划选择页面 -->
+        <div class="page plan-page" id="planPage">
+            <h2 class="page-title">CHOOSE YOUR RUN</h2>
+            <div class="recommended-plan" id="recommendedPlan" onclick="app.selectPlan('recommended')">
+                <span class="recommended-label">RECOMMENDED</span>
+                <h3 class="plan-name" id="recPlanName">STRESS RELIEF RUN</h3>
+                <p class="plan-desc" id="recPlanDesc">High intensity to burn off stress</p>
+                <div class="plan-stats">
+                    <span>⏱ 30MIN</span>
+                    <span>📍 5KM</span>
+                    <span>🔥 HIGH</span>
+                </div>
+            </div>
+            <div class="plan-list" id="planList">
+                <div class="plan-item" data-plan="sprint" onclick="app.selectPlan('sprint')">
+                    <div class="plan-item-info">
+                        <h4>SPRINT RUN</h4>
+                        <p>High intensity burst training</p>
+                    </div>
+                </div>
+                <div class="plan-item" data-plan="aerobic" onclick="app.selectPlan('aerobic')">
+                    <div class="plan-item-info">
+                        <h4>AEROBIC RUN</h4>
+                        <p>Steady pace for cardio health</p>
+                    </div>
+                </div>
+                <div class="plan-item" data-plan="scenic" onclick="app.selectPlan('scenic')">
+                    <div class="plan-item-info">
+                        <h4>SCENIC JOG</h4>
+                        <p>Relaxed pace to enjoy the view</p>
+                    </div>
+                </div>
+            </div>
+            <button class="create-own-btn" onclick="app.goToCustomPlan()">CREATE YOUR OWN!</button>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goToMood()">BACK</button>
+                <button class="retro-btn" onclick="app.startRun()" id="planNextBtn" disabled>START RUN</button>
+            </div>
+        </div>
+
+        <!-- 自定义计划页面 -->
+        <div class="page custom-plan-page" id="customPlanPage">
+            <h2 class="page-title">CREATE CUSTOM PLAN</h2>
+            <div class="custom-form">
+                <div class="form-group">
+                    <label>PLAN NAME</label>
+                    <input type="text" id="customPlanName" placeholder="e.g., Morning Blast">
+                </div>
+                <div class="form-group">
+                    <label>TARGET DISTANCE (KM)</label>
+                    <input type="number" id="customPlanDistance" placeholder="5" min="1" max="50">
+                </div>
+                <div class="form-group">
+                    <label>PACE TYPE</label>
+                    <select id="customPlanPace" onchange="app.updatePaceDisplay()">
+                        <option value="">Select pace type</option>
+                        <option value="fast">Fast (Under 5min/km)</option>
+                        <option value="mixed">Mixed (5-6.5min/km)</option>
+                        <option value="slow">Slow (Over 6.5min/km)</option>
+                    </select>
+                </div>
+                <div class="pace-range-display" id="paceRangeDisplay">
+                    Select a pace type to see details
+                </div>
+            </div>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goToPlan()">BACK</button>
+                <button class="retro-btn" onclick="app.saveCustomPlan()">SAVE PLAN</button>
+            </div>
+        </div>
+
+        <!-- 跑步中页面 -->
+        <div class="page running-page" id="runningPage">
+            <div class="running-header">
+                <h2 class="running-title">RUNNING...</h2>
+                <button class="music-toggle active" id="musicToggle" onclick="app.toggleMusic()">
+                    <span class="music-icon">♪</span>
+                    <span>ON</span>
+                </button>
+            </div>
+            <div class="map-container">
+                <svg class="map-path" viewBox="0 0 300 150" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#e06991;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#fff780;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#a4dae9;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <path class="path-line" d="M 20 120 Q 60 40 100 80 T 180 60 T 280 40" stroke="url(#pathGradient)" />
+                    <circle id="runnerPosition" cx="20" cy="120" r="8" fill="#ffee00" stroke="#fff" stroke-width="2">
+                        <animate attributeName="r" values="6;10;6" dur="1s" repeatCount="indefinite" />
+                    </circle>
+                </svg>
+            </div>
+            <div class="main-stats-display">
+                <div class="distance-display" id="distanceDisplay">0.00</div>
+                <div class="distance-label">KILOMETERS</div>
+            </div>
+            <div class="secondary-stats">
+                <div class="secondary-stat">
+                    <div class="secondary-stat-value" id="paceDisplay">--:--</div>
+                    <div class="secondary-stat-label">PACE/KM</div>
+                </div>
+                <div class="secondary-stat">
+                    <div class="secondary-stat-value" id="timeDisplay">00:00</div>
+                    <div class="secondary-stat-label">TIME</div>
+                </div>
+                <div class="secondary-stat">
+                    <div class="secondary-stat-value" id="calDisplay">0</div>
+                    <div class="secondary-stat-label">KCAL</div>
+                </div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>PROGRESS</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="pace-indicator">
+                    <div class="pace-zone" id="zoneFast">FAST</div>
+                    <div class="pace-zone" id="zoneMixed">MIXED</div>
+                    <div class="pace-zone" id="zoneAerobic">AEROBIC</div>
+                </div>
+            </div>
+            <button class="stop-btn" onclick="app.stopRun()">STOP RUN</button>
+        </div>
+
+        <div class="celebration-toast" id="celebrationToast"></div>
+
+        <!-- 结算页面 -->
+        <div class="page summary-page" id="summaryPage">
+            <div class="pixel-fireworks-container" id="fireworksContainer"></div>
+            <h2 class="page-title">RUN COMPLETE!</h2>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-label">TOTAL DISTANCE</div>
+                    <div class="summary-stat-value" id="summaryDistance">0.00 KM</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">AVERAGE PACE</div>
+                    <div class="summary-stat-value" id="summaryPace">--:-- /KM</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">DURATION</div>
+                    <div class="summary-stat-value" id="summaryTime">00:00</div>
+                </div>
+            </div>
+            <div class="calorie-analogy">
+                <h3>CALORIES BURNED</h3>
+                <p id="calorieAnalogy">You earned a treat! Great job!</p>
+            </div>
+            <button class="retro-btn" onclick="app.goToWisdom()" style="width: 100%;">CONTINUE</button>
+        </div>
+
+        <!-- 答案之书页面 -->
+        <div class="page wisdom-page" id="wisdomPage">
+            <h2 class="page-title">WISDOM BOOK</h2>
+            <div class="thought-review">
+                <h3>YOUR THOUGHTS BEFORE THE RUN:</h3>
+                <p id="wisdomThought">No thoughts recorded.</p>
+            </div>
+            <div class="book-container">
+                <p class="wisdom-text" id="wisdomText">Click to reveal...</p>
+            </div>
+            <button class="reveal-btn" id="revealBtn" onclick="app.revealWisdom()">REVEAL WISDOM</button>
+            <div class="page-actions" style="margin-top: 30px;">
+                <button class="back-btn" onclick="app.goHome()">BACK TO HOME</button>
+                <button class="retro-btn" onclick="app.goToProfile()">VIEW PROFILE</button>
+            </div>
+        </div>
+
+        <!-- 个人中心页面 -->
+        <div class="page profile-page" id="profilePage">
+            <h2 class="page-title">YOUR PROFILE</h2>
+            <div class="profile-header">
+                <div class="profile-avatar">◈</div>
+                <div class="profile-info">
+                    <h3>RUNNER_01</h3>
+                    <div class="profile-details">
+                        <span>AGE: 25</span>
+                        <span>DEV</span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="totalRuns">0</div>
+                    <div class="profile-stat-label">TOTAL RUNS</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="totalDistance">0</div>
+                    <div class="profile-stat-label">KM TOTAL</div>
+                </div>
+            </div>
+            <div class="history-section">
+                <h3>RUN HISTORY</h3>
+                <div class="history-list" id="historyList"></div>
+            </div>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goHome()">BACK</button>
+            </div>
+        </div>
+
+        <!-- 冥想页面 -->
+        <div class="page meditation-page" id="meditationPage">
+            <h2 class="page-title">MEDITATION MODE</h2>
+            <div class="breath-container">
+                <div class="breath-circle">
+                    <span class="breath-text" id="breathText">BREATHE</span>
+                </div>
+                <p class="breath-instruction">Follow the circle rhythm</p>
+            </div>
+            <div class="sound-options">
+                <div class="sound-option" data-sound="rain" onclick="app.selectSound('rain')">
+                    <span class="sound-icon">≈</span>
+                    <span class="sound-name">RAIN</span>
+                </div>
+                <div class="sound-option" data-sound="ocean" onclick="app.selectSound('ocean')">
+                    <span class="sound-icon">~</span>
+                    <span class="sound-name">OCEAN</span>
+                </div>
+                <div class="sound-option" data-sound="forest" onclick="app.selectSound('forest')">
+                    <span class="sound-icon">♣</span>
+                    <span class="sound-name">FOREST</span>
+                </div>
+                <div class="sound-option" data-sound="wind" onclick="app.selectSound('wind')">
+                    <span class="sound-icon">~</span>
+                    <span class="sound-name">WIND</span>
+                </div>
+            </div>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goHome()">BACK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="app.goHome()">
+            <span class="nav-icon">◆</span>
+            <span>HOME</span>
+        </div>
+        <div class="nav-item" onclick="app.goToProfile()">
+            <span class="nav-icon">○</span>
+            <span>PROFILE</span>
+        </div>
+    </nav>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
