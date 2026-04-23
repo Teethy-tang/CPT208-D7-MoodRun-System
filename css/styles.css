@@ -1201,6 +1201,14 @@
             box-shadow: 0 0 10px var(--secondary); */
         }
 
+        .profile-avatar-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -1231,6 +1239,15 @@
         .profile-pixel-avatar {
             width: 100%;
             height: 100%;
+        }
+
+        .profile-avatar-label {
+            font-family: var(--font-pixel);
+            font-size: 7px;
+            line-height: 1.4;
+            color: var(--accent);
+            text-shadow: 2px 2px 0 var(--primary);
+            text-align: center;
         }
 
         .profile-info h3 {
@@ -2221,6 +2238,86 @@
         }
 
         @media (max-width: 720px) {
+            .running-page {
+                padding: 18px 18px 130px;
+            }
+
+            .running-header {
+                margin-bottom: 10px;
+                padding-bottom: 6px;
+            }
+
+            .running-title {
+                font-size: 12px;
+            }
+
+            .map-container {
+                height: 86px;
+                margin-bottom: 14px;
+            }
+
+            .main-stats-display {
+                margin-bottom: 16px;
+                padding: 22px 12px 18px;
+                min-height: 128px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .distance-display {
+                font-size: clamp(34px, 12vw, 46px);
+                line-height: 1.1;
+                margin-bottom: 12px;
+            }
+
+            .distance-label {
+                display: block;
+                font-size: 8px;
+                line-height: 1.5;
+            }
+
+            .secondary-stats {
+                margin-bottom: 16px;
+                gap: 0;
+            }
+
+            .secondary-stat {
+                min-width: 0;
+                flex: 1;
+                padding: 14px 6px;
+            }
+
+            .secondary-stat-value {
+                font-size: clamp(13px, 4.5vw, 18px);
+                line-height: 1.25;
+                margin-bottom: 8px;
+            }
+
+            .secondary-stat-label {
+                font-size: 7px;
+                line-height: 1.4;
+            }
+
+            .progress-container {
+                margin-bottom: 18px;
+                padding: 16px 14px;
+            }
+
+            .progress-bar-container {
+                height: 22px;
+            }
+
+            .pace-zone {
+                padding: 5px 8px;
+                font-size: 7px;
+            }
+
+            .stop-btn {
+                padding: 20px;
+                font-size: 12px;
+            }
+
             .decoration-icon {
                 width: 62px;
                 height: 62px;
