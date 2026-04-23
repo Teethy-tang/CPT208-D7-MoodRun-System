@@ -1,26 +1,41 @@
-import { celebrations } from './data.js';
+import { moodCheckpoints, moodPlans, runPlanOptions } from './data.js';
 
-export function startRunSimulation(state, { onCheckpoint }) {
-    let lastCheckpoint = 0;
+export function startRunSimulation(state, { onCheckpoint, onComplete }) {
+    const plan = getActivePlan(state);
+    const checkpoints = moodCheckpoints[state.currentMood] || moodCheckpoints.neutral;
+    let nextCheckpointIndex = 0;
+    let completed = false;
 
-    resetRunDisplay();
+    resetRunDisplay(plan);
 
-    return setInterval(() => {
+    const timer = setInterval(() => {
         state.runData.time++;
-        state.runData.distance += 0.01 + Math.random() * 0.02;
-        state.runData.pace = 4 + Math.random() * 3;
+        state.runData.targetDistance = plan.targetDistance;
+        state.runData.planName = plan.name;
+        state.runData.pace = randomBetween(plan.paceRange[0], plan.paceRange[1]);
+        state.runData.distance = Math.min(
+            plan.targetDistance,
+            state.runData.distance + getDemoStep(plan)
+        );
         state.runData.calories = Math.floor(state.runData.distance * 60);
 
-        updateRunDisplay(state.runData);
+        const progress = updateRunDisplay(state.runData, plan);
 
-        const distMeters = Math.floor(state.runData.distance * 1000);
-        Object.keys(celebrations).forEach(checkpoint => {
-            if (distMeters >= checkpoint && lastCheckpoint < checkpoint) {
-                onCheckpoint(celebrations[checkpoint]);
-            }
-        });
-        lastCheckpoint = distMeters;
+        const nextCheckpoint = checkpoints[nextCheckpointIndex];
+        if (nextCheckpoint && progress >= nextCheckpoint.progress) {
+            onCheckpoint(nextCheckpoint.text);
+            nextCheckpointIndex++;
+        }
+
+        if (!completed && progress >= 100) {
+            completed = true;
+            clearInterval(timer);
+            onCheckpoint('TARGET COMPLETE!');
+            window.setTimeout(onComplete, 850);
+        }
     }, 1000);
+
+    return timer;
 }
 
 export function makeRunRecord(state) {
@@ -32,7 +47,10 @@ export function makeRunRecord(state) {
         pace: state.runData.pace,
         time: state.runData.time,
         calories: state.runData.calories,
-        plan: state.selectedPlan
+        plan: state.selectedPlan,
+        planName: state.runData.planName,
+        moodAfter: state.lastMoodShift?.after,
+        moodInsight: state.lastMoodShift?.insight
     };
 }
 
@@ -44,19 +62,39 @@ export function formatTime(seconds) {
     return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-function resetRunDisplay() {
+export function getActivePlan(state) {
+    if (state.selectedPlan === 'recommended') {
+        return moodPlans[state.currentMood] || moodPlans.neutral;
+    }
+
+    return runPlanOptions[state.selectedPlan] || moodPlans[state.currentMood] || moodPlans.neutral;
+}
+
+function randomBetween(min, max) {
+    return min + Math.random() * (max - min);
+}
+
+function getDemoStep(plan) {
+    const baseStep = plan.targetDistance / plan.demoDuration;
+    return baseStep * randomBetween(0.82, 1.18);
+}
+
+function resetRunDisplay(plan) {
     document.getElementById('distanceDisplay').textContent = '0.00';
     document.getElementById('paceDisplay').textContent = '--:--';
     document.getElementById('timeDisplay').textContent = '00:00';
     document.getElementById('calDisplay').textContent = '0';
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('progressPercent').textContent = '0%';
+    document.getElementById('runTargetLabel').textContent = `TARGET ${plan.dist}`;
     document.querySelectorAll('.pace-zone').forEach(zone => zone.classList.remove('active'));
+
+    const runActionBtn = document.getElementById('runActionBtn');
+    if (runActionBtn) runActionBtn.textContent = 'STOP RUN';
 }
 
-function updateRunDisplay(runData) {
-    const targetDist = 5;
-    const progress = Math.min((runData.distance / targetDist) * 100, 100);
+function updateRunDisplay(runData, plan) {
+    const progress = Math.min((runData.distance / plan.targetDistance) * 100, 100);
 
     document.getElementById('distanceDisplay').textContent = runData.distance.toFixed(2);
     document.getElementById('paceDisplay').textContent = formatPace(runData.pace);
@@ -67,6 +105,13 @@ function updateRunDisplay(runData) {
 
     updateRunnerPosition(progress);
     updatePaceZone(runData.pace);
+
+    if (progress >= 100) {
+        const runActionBtn = document.getElementById('runActionBtn');
+        if (runActionBtn) runActionBtn.textContent = 'FINISHING...';
+    }
+
+    return progress;
 }
 
 function updateRunnerPosition(progress) {

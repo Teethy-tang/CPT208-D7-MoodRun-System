@@ -1,8 +1,8 @@
-import { calorieAnalogies, moodPlans, paceDescriptions, wisdomQuotes } from './data.js';
+import { calorieAnalogies, moodOutcomes, moodPlans, paceDescriptions, wisdomQuotes } from './data.js';
 import { avatarOptions, createAvatarSvg, getAvatarLabel, loadAvatar, randomAvatar, saveAvatar } from './avatar.js';
 import { initCursorGlow, initGravityGrid, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
 import { createRouter } from './router.js';
-import { formatPace, formatTime, makeRunRecord, startRunSimulation } from './runTracker.js';
+import { formatPace, formatTime, getActivePlan, makeRunRecord, startRunSimulation } from './runTracker.js';
 import { loadRunHistory, saveRunHistory } from './storage.js';
 
 const router = createRouter({
@@ -18,10 +18,12 @@ const state = {
     customPlans: [],
     runData: { distance: 0, pace: 0, time: 0, calories: 0 },
     runHistory: loadRunHistory(),
+    lastMoodShift: null,
     avatar: savedAvatar,
     avatarDraft: { ...savedAvatar },
     musicEnabled: true,
-    runInterval: null
+    runInterval: null,
+    runSaved: false
 };
 
 const app = {
@@ -159,14 +161,28 @@ const app = {
         }
 
         this.showPage('runningPage');
-        this.runData = { distance: 0, pace: 0, time: 0, calories: 0 };
+        const activePlan = getActivePlan(this);
+
+        this.runData = {
+            distance: 0,
+            pace: 0,
+            time: 0,
+            calories: 0,
+            targetDistance: activePlan.targetDistance,
+            planName: activePlan.name
+        };
         this.musicEnabled = true;
+        this.runSaved = false;
+        this.lastMoodShift = moodOutcomes[this.currentMood] || moodOutcomes.neutral;
 
         const musicToggle = document.getElementById('musicToggle');
         musicToggle.classList.add('active');
         musicToggle.querySelector('span:last-child').textContent = 'ON';
 
-        this.runInterval = startRunSimulation(this, { onCheckpoint: showCelebration });
+        this.runInterval = startRunSimulation(this, {
+            onCheckpoint: showCelebration,
+            onComplete: () => this.finishRun()
+        });
     },
 
     toggleMusic() {
@@ -178,12 +194,19 @@ const app = {
     },
 
     stopRun() {
+        this.finishRun();
+    },
+
+    finishRun() {
+        if (this.runSaved) return;
+
         if (this.runInterval) {
             clearInterval(this.runInterval);
             this.runInterval = null;
         }
 
         this.saveRunToHistory();
+        this.runSaved = true;
         this.showSummary();
     },
 
@@ -200,6 +223,13 @@ const app = {
         document.getElementById('summaryPace').textContent = `${formatPace(this.runData.pace)} /KM`;
         document.getElementById('summaryTime').textContent = formatTime(this.runData.time);
 
+        const beforeMood = (this.currentMood || 'neutral').toUpperCase();
+        const moodShift = this.lastMoodShift || moodOutcomes[this.currentMood] || moodOutcomes.neutral;
+        document.getElementById('summaryMoodBefore').textContent = beforeMood;
+        document.getElementById('summaryMoodAfter').textContent = moodShift.after;
+        document.getElementById('summaryMoodInsight').textContent = moodShift.insight;
+        document.getElementById('summaryPlanName').textContent = this.runData.planName || 'MOOD RUN';
+
         const paceEl = document.getElementById('summaryPace');
         paceEl.className = 'summary-stat-value';
         if (this.runData.pace < 5) paceEl.classList.add('fast');
@@ -212,7 +242,8 @@ const app = {
     },
 
     revealWisdom() {
-        const quote = wisdomQuotes[Math.floor(Math.random() * wisdomQuotes.length)];
+        const quotes = wisdomQuotes[this.currentMood] || wisdomQuotes.neutral;
+        const quote = quotes[Math.floor(Math.random() * quotes.length)];
         document.getElementById('wisdomText').textContent = `"${quote}"`;
         document.getElementById('revealBtn').disabled = true;
     },
@@ -230,12 +261,19 @@ const app = {
             const date = new Date(run.date);
             const item = document.createElement('div');
             const thought = run.thought || 'No thought recorded';
+            const mood = run.mood || 'neutral';
+            const moodAfter = run.moodAfter || moodOutcomes[mood]?.after || moodOutcomes.neutral.after;
+            const moodInsight = run.moodInsight || moodOutcomes[mood]?.insight || moodOutcomes.neutral.insight;
+            const planName = run.planName || 'MOOD RUN';
 
             item.className = 'history-item';
             item.innerHTML = `
                 <div class="history-left">
                     <div class="history-date">${date.toLocaleDateString()}</div>
-                    <div class="history-mood">${thought.substring(0, 25)}${thought.length > 25 ? '...' : ''}</div>
+                    <div class="history-plan">${escapeHtml(planName)}</div>
+                    <div class="history-mood">${escapeHtml(mood.toUpperCase())} -> ${escapeHtml(moodAfter)}</div>
+                    <div class="history-thought">${escapeHtml(thought.substring(0, 42))}${thought.length > 42 ? '...' : ''}</div>
+                    <div class="history-insight">${escapeHtml(moodInsight)}</div>
                 </div>
                 <div class="history-right">
                     <div class="history-distance">${run.distance.toFixed(2)} KM</div>
@@ -304,6 +342,15 @@ const app = {
 
     selectSound
 };
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
 
 initCursorGlow(document.getElementById('cursorGlow'));
 initGravityGrid(document.getElementById('gravityGrid'));

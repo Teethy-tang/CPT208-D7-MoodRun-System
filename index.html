@@ -285,7 +285,7 @@
             </div>
             <div class="progress-container">
                 <div class="progress-header">
-                    <span>PROGRESS</span>
+                    <span id="runTargetLabel">TARGET 5KM</span>
                     <span id="progressPercent">0%</span>
                 </div>
                 <div class="progress-bar-container">
@@ -297,7 +297,7 @@
                     <div class="pace-zone" id="zoneAerobic">AEROBIC</div>
                 </div>
             </div>
-            <button class="stop-btn" onclick="app.stopRun()">STOP RUN</button>
+            <button class="stop-btn" id="runActionBtn" onclick="app.stopRun()">STOP RUN</button>
         </div>
 
         <div class="celebration-toast" id="celebrationToast"></div>
@@ -319,6 +319,18 @@
                     <div class="summary-stat-label">DURATION</div>
                     <div class="summary-stat-value" id="summaryTime">00:00</div>
                 </div>
+            </div>
+            <div class="mood-arc-card">
+                <div class="mood-arc-heading">
+                    <span>MOOD ARC</span>
+                    <span id="summaryPlanName">MOOD RUN</span>
+                </div>
+                <div class="mood-arc-flow">
+                    <span id="summaryMoodBefore">NEUTRAL</span>
+                    <span class="mood-arc-arrow">-&gt;</span>
+                    <span id="summaryMoodAfter">BALANCED</span>
+                </div>
+                <p id="summaryMoodInsight">A steady run gave the day a shape.</p>
             </div>
             <div class="calorie-analogy">
                 <h3>CALORIES BURNED</h3>
