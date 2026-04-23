@@ -1049,6 +1049,11 @@
             text-shadow: 1px 1px 0px var(--primary);
         }
 
+        .summary-continue-btn {
+            width: 100%;
+            margin-left: 0;
+        }
+
         .encouragement {
             text-align: center;
             margin-bottom: 30px;
