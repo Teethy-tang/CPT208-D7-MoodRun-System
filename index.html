@@ -19,7 +19,12 @@
                     <div class="slogan-main">MOOD<br>RUN</div>
                     <div class="slogan-sub">HERE IT IS</div>
                 </div>
-                <div class="decoration-icon">👾</div>
+                <button class="home-avatar-prompt avatar-button" type="button" onclick="app.goToAvatar()" aria-label="Enter avatar studio">
+                    <span class="decoration-icon" aria-hidden="true">
+                        <span id="homeAvatar"></span>
+                    </span>
+                    <span class="avatar-speech">ENTER AVATAR STUDIO</span>
+                </button>
             </div>
             <div class="bottom-area">
                 <div class="button-group">
@@ -343,7 +348,9 @@
         <div class="page profile-page" id="profilePage">
             <h2 class="page-title">YOUR PROFILE</h2>
             <div class="profile-header">
-                <div class="profile-avatar">◈</div>
+                <button class="profile-avatar avatar-button" type="button" onclick="app.goToAvatar()" aria-label="Edit avatar">
+                    <span id="profileAvatar"></span>
+                </button>
                 <div class="profile-info">
                     <h3>RUNNER_01</h3>
                     <div class="profile-details">
@@ -368,6 +375,23 @@
             </div>
             <div class="page-actions">
                 <button class="back-btn" onclick="app.goHome()">BACK</button>
+            </div>
+        </div>
+
+        <div class="page avatar-page" id="avatarPage">
+            <h2 class="page-title">AVATAR STUDIO</h2>
+            <div class="avatar-studio">
+                <div class="avatar-preview-panel">
+                    <div class="avatar-preview-frame">
+                        <div id="avatarPreview"></div>
+                    </div>
+                    <button class="create-own-btn" onclick="app.randomizeAvatar()">RANDOMIZE</button>
+                </div>
+                <div class="avatar-controls" id="avatarControls"></div>
+            </div>
+            <div class="page-actions">
+                <button class="back-btn" onclick="app.goHome()">CANCEL</button>
+                <button class="retro-btn" onclick="app.saveAvatarChoice()">SAVE AVATAR</button>
             </div>
         </div>
 

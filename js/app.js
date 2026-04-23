@@ -1,4 +1,5 @@
 import { calorieAnalogies, moodPlans, paceDescriptions, wisdomQuotes } from './data.js';
+import { avatarOptions, createAvatarSvg, getAvatarLabel, loadAvatar, randomAvatar, saveAvatar } from './avatar.js';
 import { initCursorGlow, initGravityGrid, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
 import { createRouter } from './router.js';
 import { formatPace, formatTime, makeRunRecord, startRunSimulation } from './runTracker.js';
@@ -8,6 +9,8 @@ const router = createRouter({
     cursorGlow: document.getElementById('cursorGlow')
 });
 
+const savedAvatar = loadAvatar();
+
 const state = {
     currentMood: null,
     currentThought: '',
@@ -15,6 +18,8 @@ const state = {
     customPlans: [],
     runData: { distance: 0, pace: 0, time: 0, calories: 0 },
     runHistory: loadRunHistory(),
+    avatar: savedAvatar,
+    avatarDraft: { ...savedAvatar },
     musicEnabled: true,
     runInterval: null
 };
@@ -78,6 +83,12 @@ const app = {
     goToMeditation() {
         this.showPage('meditationPage');
         startBreathing();
+    },
+
+    goToAvatar() {
+        this.avatarDraft = { ...this.avatar };
+        this.showPage('avatarPage');
+        this.renderAvatarStudio();
     },
 
     goToProfile() {
@@ -235,12 +246,69 @@ const app = {
         });
     },
 
+    renderCurrentAvatar() {
+        const avatarMarkup = createAvatarSvg(this.avatar);
+        const homeAvatar = document.getElementById('homeAvatar');
+        const profileAvatar = document.getElementById('profileAvatar');
+
+        if (homeAvatar) homeAvatar.innerHTML = avatarMarkup;
+        if (profileAvatar) profileAvatar.innerHTML = createAvatarSvg(this.avatar, 'pixel-avatar profile-pixel-avatar');
+    },
+
+    renderAvatarStudio() {
+        const preview = document.getElementById('avatarPreview');
+        const controls = document.getElementById('avatarControls');
+
+        if (preview) {
+            preview.innerHTML = createAvatarSvg(this.avatarDraft, 'pixel-avatar avatar-preview');
+        }
+
+        if (!controls) return;
+
+        controls.innerHTML = Object.entries(avatarOptions).map(([key, values]) => `
+            <div class="avatar-control-group">
+                <div class="avatar-control-title">${key.replace(/([A-Z])/g, ' $1').toUpperCase()}</div>
+                <div class="avatar-option-row ${key.includes('Color') ? 'color-options' : ''}">
+                    ${values.map(value => `
+                        <button
+                            type="button"
+                            class="avatar-option ${this.avatarDraft[key] === value ? 'active' : ''}"
+                            style="${key.includes('Color') ? `--swatch: ${value};` : ''}"
+                            onclick="app.selectAvatarOption('${key}', '${value}')"
+                            aria-label="${getAvatarLabel(key, value)}"
+                        >
+                            ${key.includes('Color') ? '<span class="avatar-swatch"></span>' : getAvatarLabel(key, value)}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    },
+
+    selectAvatarOption(key, value) {
+        this.avatarDraft = { ...this.avatarDraft, [key]: value };
+        this.renderAvatarStudio();
+    },
+
+    randomizeAvatar() {
+        this.avatarDraft = randomAvatar();
+        this.renderAvatarStudio();
+    },
+
+    saveAvatarChoice() {
+        this.avatar = { ...this.avatarDraft };
+        saveAvatar(this.avatar);
+        this.renderCurrentAvatar();
+        this.goHome();
+    },
+
     selectSound
 };
 
 initCursorGlow(document.getElementById('cursorGlow'));
 initGravityGrid(document.getElementById('gravityGrid'));
 initNavGlow(document.querySelector('.bottom-nav'));
+app.renderCurrentAvatar();
 router.updateNav('home');
 window.app = app;
 
