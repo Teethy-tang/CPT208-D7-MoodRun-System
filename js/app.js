@@ -1,4 +1,4 @@
-import { calorieAnalogies, moodOutcomes, moodPlans, paceDescriptions, wisdomQuotes } from './data.js';
+import { calorieAnalogies, moodOutcomes, moodPlans, moodProfiles, paceDescriptions, wisdomQuotes } from './data.js';
 import { avatarOptions, createAvatarSvg, getAvatarLabel, loadAvatar, randomAvatar, saveAvatar } from './avatar.js';
 import { initCursorGlow, initGravityGrid, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
 import { createRouter } from './router.js';
@@ -50,6 +50,7 @@ const app = {
         this.showPage('moodPage');
         this.currentMood = null;
         this.currentThought = '';
+        resetMoodProfile();
 
         document.getElementById('thoughtInput').value = '';
         document.querySelectorAll('.mood-item').forEach(item => item.classList.remove('selected'));
@@ -110,6 +111,7 @@ const app = {
         this.currentMood = mood;
         document.querySelectorAll('.mood-item').forEach(item => item.classList.remove('selected'));
         document.querySelector(`[data-mood="${mood}"]`)?.classList.add('selected');
+        applyMoodProfile(mood);
         document.getElementById('moodNextBtn').disabled = false;
     },
 
@@ -342,6 +344,52 @@ const app = {
 
     selectSound
 };
+
+const moodMotionClasses = Object.values(moodProfiles).map(profile => `mood-motion-${profile.motion}`);
+
+function applyMoodProfile(mood) {
+    const profile = moodProfiles[mood] || moodProfiles.neutral;
+    const moodPage = document.getElementById('moodPage');
+    const response = document.getElementById('moodResponse');
+    const responseTone = document.getElementById('moodResponseTone');
+    const responseText = document.getElementById('moodResponseText');
+
+    if (moodPage) {
+        moodPage.dataset.activeMood = mood;
+        moodPage.classList.remove(...moodMotionClasses);
+        moodPage.classList.add(`mood-motion-${profile.motion}`);
+        moodPage.style.setProperty('--mood-primary', profile.primary);
+        moodPage.style.setProperty('--mood-accent', profile.accent);
+        moodPage.style.setProperty('--mood-soft', profile.soft);
+        moodPage.style.setProperty('--mood-shadow', profile.shadow);
+    }
+
+    if (response) {
+        response.hidden = false;
+        response.style.animation = 'none';
+        void response.offsetWidth;
+        response.style.animation = '';
+    }
+
+    if (responseTone) responseTone.textContent = profile.tone;
+    if (responseText) responseText.textContent = profile.response;
+}
+
+function resetMoodProfile() {
+    const moodPage = document.getElementById('moodPage');
+    const response = document.getElementById('moodResponse');
+
+    if (moodPage) {
+        delete moodPage.dataset.activeMood;
+        moodPage.classList.remove(...moodMotionClasses);
+        moodPage.style.removeProperty('--mood-primary');
+        moodPage.style.removeProperty('--mood-accent');
+        moodPage.style.removeProperty('--mood-soft');
+        moodPage.style.removeProperty('--mood-shadow');
+    }
+
+    if (response) response.hidden = true;
+}
 
 function escapeHtml(value) {
     return String(value)

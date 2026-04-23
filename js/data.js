@@ -91,6 +91,90 @@ export const moodPlans = {
     }
 };
 
+export const moodProfiles = {
+    stressed: {
+        primary: '#ff3f8f',
+        accent: '#ffd84d',
+        soft: 'rgba(255, 63, 143, 0.16)',
+        shadow: 'rgba(141, 67, 98, 0.48)',
+        motion: 'tension',
+        tone: 'PRESSURE CHECK-IN',
+        response: 'Bring the pressure in. You do not have to solve it before you move.'
+    },
+    anxious: {
+        primary: '#00d4c0',
+        accent: '#8f7bff',
+        soft: 'rgba(0, 212, 192, 0.15)',
+        shadow: 'rgba(15, 120, 111, 0.42)',
+        motion: 'tremble',
+        tone: 'STEADYING RITUAL',
+        response: 'Bring the worry in. Let the next step be smaller than the whole storm.'
+    },
+    tired: {
+        primary: '#7e88a8',
+        accent: '#b7f0dc',
+        soft: 'rgba(126, 136, 168, 0.16)',
+        shadow: 'rgba(74, 82, 110, 0.38)',
+        motion: 'slow',
+        tone: 'GENTLE START',
+        response: 'Bring the tiredness in. We will start softly and let energy arrive late.'
+    },
+    angry: {
+        primary: '#ff4d5f',
+        accent: '#ffb347',
+        soft: 'rgba(255, 77, 95, 0.16)',
+        shadow: 'rgba(135, 45, 52, 0.48)',
+        motion: 'strike',
+        tone: 'HEAT CHANNEL',
+        response: 'Bring the heat in. The run can give it direction without letting it lead.'
+    },
+    sad: {
+        primary: '#4f7eff',
+        accent: '#9beee6',
+        soft: 'rgba(79, 126, 255, 0.14)',
+        shadow: 'rgba(57, 79, 145, 0.38)',
+        motion: 'drift',
+        tone: 'SOFT LANDING',
+        response: 'Bring the heaviness in. Gentle movement still counts as care.'
+    },
+    bored: {
+        primary: '#8a92ad',
+        accent: '#ffd84d',
+        soft: 'rgba(138, 146, 173, 0.16)',
+        shadow: 'rgba(87, 94, 122, 0.36)',
+        motion: 'shuffle',
+        tone: 'PATTERN BREAK',
+        response: 'Bring the flat feeling in. We can change the pattern one step at a time.'
+    },
+    excited: {
+        primary: '#ffd84d',
+        accent: '#ff7fca',
+        soft: 'rgba(255, 216, 77, 0.18)',
+        shadow: 'rgba(180, 130, 38, 0.42)',
+        motion: 'spark',
+        tone: 'ENERGY FOCUS',
+        response: 'Bring the spark in. The run will give all that energy a clean line.'
+    },
+    happy: {
+        primary: '#ffe36d',
+        accent: '#79e1d6',
+        soft: 'rgba(255, 227, 109, 0.2)',
+        shadow: 'rgba(181, 144, 42, 0.36)',
+        motion: 'bounce',
+        tone: 'JOY CARRY',
+        response: 'Bring the good feeling in. Let the run help you remember it.'
+    },
+    neutral: {
+        primary: '#8fa0c4',
+        accent: '#f993be',
+        soft: 'rgba(143, 160, 196, 0.15)',
+        shadow: 'rgba(88, 97, 126, 0.35)',
+        motion: 'steady',
+        tone: 'BALANCE POINT',
+        response: 'Bring the ordinary moment in. A steady route can still change the day.'
+    }
+};
+
 export const runPlanOptions = {
     sprint: {
         name: 'SPRINT RUN',
