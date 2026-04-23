@@ -465,19 +465,45 @@
             </div>
             <div class="sound-options">
                 <div class="sound-option" data-sound="rain" onclick="app.selectSound('rain')">
-                    <span class="sound-icon">≈</span>
+                    <span class="sound-icon" aria-hidden="true">
+                        <svg class="sound-svg rain-icon" viewBox="0 0 48 40" focusable="false">
+                            <path d="M16 5 L11 19" />
+                            <path d="M28 5 L23 19" />
+                            <path d="M39 7 L34 21" />
+                            <path d="M12 25 L8 36" />
+                            <path d="M25 25 L21 36" />
+                            <path d="M37 25 L33 36" />
+                        </svg>
+                    </span>
                     <span class="sound-name">RAIN</span>
                 </div>
                 <div class="sound-option" data-sound="ocean" onclick="app.selectSound('ocean')">
-                    <span class="sound-icon">~</span>
+                    <span class="sound-icon" aria-hidden="true">
+                        <svg class="sound-svg ocean-icon" viewBox="0 0 48 40" focusable="false">
+                            <path d="M5 27 C11 15, 19 13, 27 22 C33 29, 39 30, 44 23" />
+                            <path d="M5 32 C13 35, 21 35, 29 32 S39 29, 44 32" />
+                            <path d="M23 20 C27 13, 34 10, 40 14" />
+                        </svg>
+                    </span>
                     <span class="sound-name">OCEAN</span>
                 </div>
                 <div class="sound-option" data-sound="forest" onclick="app.selectSound('forest')">
-                    <span class="sound-icon">♣</span>
+                    <span class="sound-icon" aria-hidden="true">
+                        <svg class="sound-svg forest-icon" viewBox="0 0 48 40" focusable="false">
+                            <path d="M24 7 L12 24 H36 Z" />
+                            <path d="M24 24 V35" />
+                        </svg>
+                    </span>
                     <span class="sound-name">FOREST</span>
                 </div>
                 <div class="sound-option" data-sound="wind" onclick="app.selectSound('wind')">
-                    <span class="sound-icon">~</span>
+                    <span class="sound-icon" aria-hidden="true">
+                        <svg class="sound-svg wind-icon" viewBox="0 0 48 40" focusable="false">
+                            <path d="M5 13 H30 C35 13, 35 7, 30 7" />
+                            <path d="M10 22 H41 C47 22, 47 14, 41 14" />
+                            <path d="M6 31 H27 C32 31, 32 25, 27 25" />
+                        </svg>
+                    </span>
                     <span class="sound-name">WIND</span>
                 </div>
             </div>

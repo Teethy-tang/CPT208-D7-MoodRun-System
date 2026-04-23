@@ -2188,8 +2188,39 @@
 
         .sound-icon {
             font-size: 32px;
-            display: block;
+            line-height: 40px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 10px;
+        }
+
+        .sound-svg {
+            width: 48px;
+            height: 40px;
+            display: block;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .rain-icon {
+            stroke-width: 3.2;
+        }
+
+        .ocean-icon {
+            stroke-width: 3.4;
+        }
+
+        .forest-icon {
+            stroke-width: 2.8;
+        }
+
+        .wind-icon {
+            width: 52px;
         }
 
         .sound-name {
