@@ -14,6 +14,7 @@ const savedAvatar = loadAvatar();
 const state = {
     currentMood: null,
     currentThought: '',
+    aiSuggestedMood: null,
     selectedPlan: null,
     customPlans: [],
     runData: { distance: 0, pace: 0, time: 0, calories: 0 },
@@ -50,11 +51,55 @@ const app = {
         this.showPage('moodPage');
         this.currentMood = null;
         this.currentThought = '';
+        this.aiSuggestedMood = null;
         resetMoodProfile();
 
         document.getElementById('thoughtInput').value = '';
         document.querySelectorAll('.mood-item').forEach(item => item.classList.remove('selected'));
         document.getElementById('moodNextBtn').disabled = true;
+    },
+
+    goToMoodAssistant() {
+        this.currentThought = document.getElementById('thoughtInput').value.trim();
+        this.aiSuggestedMood = null;
+        resetMoodAssistant(this.currentThought);
+        this.showPage('moodAiPage');
+        window.setTimeout(() => document.getElementById('aiMoodInput')?.focus(), 80);
+    },
+
+    returnFromMoodAssistant() {
+        this.showPage('moodPage');
+        document.getElementById('thoughtInput').value = this.currentThought || '';
+    },
+
+    sendMoodAssistantMessage(event) {
+        event?.preventDefault();
+
+        const input = document.getElementById('aiMoodInput');
+        const message = input?.value.trim() || '';
+
+        if (!message) {
+            setAiMessage('Give me a few words about what is happening inside.');
+            return;
+        }
+
+        this.currentThought = message;
+        if (input) input.value = '';
+
+        const mood = inferMoodFromThought(message);
+        this.aiSuggestedMood = mood;
+        setAiMoodSuggestion(mood);
+
+        const useButton = document.getElementById('aiUseMoodBtn');
+        if (useButton) useButton.hidden = false;
+    },
+
+    acceptMoodAssistantSuggestion() {
+        if (!this.aiSuggestedMood) return;
+
+        this.showPage('moodPage');
+        document.getElementById('thoughtInput').value = this.currentThought || '';
+        this.selectMood(this.aiSuggestedMood);
     },
 
     goToPlan() {
@@ -389,6 +434,100 @@ function resetMoodProfile() {
     }
 
     if (response) response.hidden = true;
+}
+
+function resetMoodAssistant(prefill = '') {
+    const chatLog = document.getElementById('aiChatLog');
+    const input = document.getElementById('aiMoodInput');
+    const useButton = document.getElementById('aiUseMoodBtn');
+
+    if (chatLog) {
+        chatLog.innerHTML = '';
+        setAiMessage(prefill
+            ? 'I can sit with that. Send it when you are ready, and I will name the closest mood.'
+            : 'Tell me what you are carrying. I will help name the mood.'
+        );
+    }
+
+    if (input) input.value = prefill;
+    if (useButton) useButton.hidden = true;
+}
+
+function setAiMessage(text) {
+    const chatLog = document.getElementById('aiChatLog');
+    if (!chatLog) return;
+
+    const message = document.createElement('div');
+    message.className = 'ai-message assistant';
+    message.textContent = text;
+    chatLog.innerHTML = '';
+    chatLog.appendChild(message);
+}
+
+function setAiMoodSuggestion(mood) {
+    const chatLog = document.getElementById('aiChatLog');
+    const profile = moodProfiles[mood] || moodProfiles.neutral;
+    if (!chatLog) return;
+
+    const message = document.createElement('div');
+    const label = document.createElement('strong');
+    const detail = document.createElement('span');
+
+    message.className = 'ai-message assistant';
+    label.textContent = `MOOD: ${mood.toUpperCase()}`;
+    detail.textContent = ` ${profile.response}`;
+    message.append(label, document.createElement('br'), detail);
+    chatLog.innerHTML = '';
+    chatLog.appendChild(message);
+}
+
+function inferMoodFromThought(value) {
+    const text = value.toLowerCase();
+    const signals = [
+        {
+            mood: 'angry',
+            words: ['angry', 'mad', 'rage', 'furious', 'annoyed', 'hate', 'unfair', 'pissed', '生气', '愤怒', '烦死', '火大']
+        },
+        {
+            mood: 'anxious',
+            words: ['anxious', 'worry', 'worried', 'panic', 'nervous', 'afraid', 'scared', 'overthinking', 'deadline', '焦虑', '担心', '紧张', '害怕', '慌']
+        },
+        {
+            mood: 'stressed',
+            words: ['stress', 'stressed', 'pressure', 'overwhelmed', 'too much', 'busy', 'crushed', 'exam', 'workload', '压力', '压抑', '忙', '崩溃']
+        },
+        {
+            mood: 'sad',
+            words: ['sad', 'down', 'lonely', 'empty', 'cry', 'hurt', 'heavy', 'miss', 'depressed', '难过', '伤心', '孤独', '低落', '想哭']
+        },
+        {
+            mood: 'tired',
+            words: ['tired', 'sleepy', 'exhausted', 'drained', 'no energy', 'burned out', 'weak', '累', '困', '疲惫', '没力气', '没精神']
+        },
+        {
+            mood: 'bored',
+            words: ['bored', 'flat', 'nothing', 'same', 'dull', 'stuck', 'boring', '无聊', '麻木', '没意思', '卡住']
+        },
+        {
+            mood: 'excited',
+            words: ['excited', 'hyped', 'restless', 'ready', 'energy', 'can\'t wait', '激动', '兴奋', '期待', '坐不住']
+        },
+        {
+            mood: 'happy',
+            words: ['happy', 'good', 'great', 'joy', 'grateful', 'proud', 'smile', '开心', '快乐', '高兴', '满足']
+        }
+    ];
+
+    const scores = signals.map(signal => ({
+        mood: signal.mood,
+        score: signal.words.reduce((sum, word) => sum + (text.includes(word) ? 1 : 0), 0)
+    }));
+    const best = scores.sort((a, b) => b.score - a.score)[0];
+
+    if (best?.score > 0) return best.mood;
+    if (text.length < 18) return 'neutral';
+    if (/[?!]{2,}/.test(text)) return 'anxious';
+    return 'neutral';
 }
 
 function escapeHtml(value) {

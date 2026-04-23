@@ -174,6 +174,10 @@
             <div class="thought-section">
                 <label>WHAT'S ON YOUR MIND?</label>
                 <textarea class="thought-input" id="thoughtInput" placeholder="Write down your thoughts..."></textarea>
+                <button class="ai-assist-entry" type="button" onclick="app.goToMoodAssistant()">
+                    <span class="ai-assist-dot" aria-hidden="true"></span>
+                    <span>ASK MOOD AI</span>
+                </button>
             </div>
             <div class="page-actions">
                 <button class="back-btn" onclick="app.goHome()">BACK</button>
@@ -182,6 +186,35 @@
         </div>
 
         <!-- 计划选择页面 -->
+        <div class="page mood-ai-page" id="moodAiPage">
+            <div class="ai-topbar">
+                <button class="back-btn" onclick="app.returnFromMoodAssistant()">BACK</button>
+                <h2 class="page-title">MOOD AI</h2>
+            </div>
+            <button class="ai-use-btn" id="aiUseMoodBtn" onclick="app.acceptMoodAssistantSuggestion()" hidden>
+                <span aria-hidden="true"></span>
+                USE THIS MOOD
+            </button>
+            <div class="ai-orb-stage">
+                <div class="ai-orb" aria-hidden="true">
+                    <span class="ai-orb-core"></span>
+                    <span class="ai-orb-ring"></span>
+                    <span class="ai-orb-spark spark-one"></span>
+                    <span class="ai-orb-spark spark-two"></span>
+                    <span class="ai-orb-spark spark-three"></span>
+                </div>
+                <div class="ai-chat-log" id="aiChatLog" aria-live="polite">
+                    <div class="ai-message assistant">Tell me what you are carrying. I will help name the mood.</div>
+                </div>
+            </div>
+            <form class="ai-input-bar" onsubmit="app.sendMoodAssistantMessage(event)">
+                <input id="aiMoodInput" type="text" autocomplete="off" placeholder="Type your thought..." />
+                <button type="submit" aria-label="Send message">
+                    <span aria-hidden="true"></span>
+                </button>
+            </form>
+        </div>
+
         <div class="page plan-page" id="planPage">
             <h2 class="page-title">CHOOSE YOUR RUN</h2>
             <div class="recommended-plan" id="recommendedPlan" onclick="app.selectPlan('recommended')">
