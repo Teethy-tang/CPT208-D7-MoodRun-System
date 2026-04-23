@@ -1,5 +1,5 @@
 import { calorieAnalogies, moodPlans, paceDescriptions, wisdomQuotes } from './data.js';
-import { initCursorGlow, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
+import { initCursorGlow, initGravityGrid, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
 import { createRouter } from './router.js';
 import { formatPace, formatTime, makeRunRecord, startRunSimulation } from './runTracker.js';
 import { loadRunHistory, saveRunHistory } from './storage.js';
@@ -239,6 +239,7 @@ const app = {
 };
 
 initCursorGlow(document.getElementById('cursorGlow'));
+initGravityGrid(document.getElementById('gravityGrid'));
 initNavGlow(document.querySelector('.bottom-nav'));
 router.updateNav('home');
 window.app = app;
