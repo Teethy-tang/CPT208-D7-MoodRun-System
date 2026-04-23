@@ -34,6 +34,58 @@ export function initCursorGlow(cursorGlow) {
     animateCursor();
 }
 
+export function initNavGlow(nav) {
+    if (!nav) return;
+
+    let targetX = nav.offsetWidth / 2;
+    let targetY = nav.offsetHeight / 2;
+    let currentX = targetX;
+    let currentY = targetY;
+    let isInside = false;
+    let animationFrame = null;
+
+    function animateGlow() {
+        currentX += (targetX - currentX) * 0.14;
+        currentY += (targetY - currentY) * 0.14;
+        nav.style.setProperty('--nav-glow-x', `${currentX}px`);
+        nav.style.setProperty('--nav-glow-y', `${currentY}px`);
+
+        if (isInside || Math.abs(targetX - currentX) > 0.4 || Math.abs(targetY - currentY) > 0.4) {
+            animationFrame = requestAnimationFrame(animateGlow);
+        } else {
+            animationFrame = null;
+        }
+    }
+
+    function startGlowAnimation() {
+        if (!animationFrame) {
+            animationFrame = requestAnimationFrame(animateGlow);
+        }
+    }
+
+    function updateGlow(event) {
+        const rect = nav.getBoundingClientRect();
+        targetX = event.clientX - rect.left;
+        targetY = event.clientY - rect.top;
+
+        isInside = true;
+        nav.classList.add('nav-glowing');
+        startGlowAnimation();
+    }
+
+    function hideGlow() {
+        isInside = false;
+        nav.classList.remove('nav-glowing');
+        startGlowAnimation();
+    }
+
+    nav.addEventListener('pointerenter', updateGlow);
+    nav.addEventListener('pointermove', updateGlow);
+    nav.addEventListener('pointerdown', updateGlow);
+    nav.addEventListener('pointerleave', hideGlow);
+    nav.addEventListener('pointercancel', hideGlow);
+}
+
 export function showCelebration(text) {
     const toast = document.getElementById('celebrationToast');
     if (!toast) return;

@@ -218,6 +218,45 @@
             cursor: not-allowed;
         }
 
+        .home-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            min-width: 320px;
+        }
+
+        .home-action-btn > span:not(.action-arrow) {
+            flex: 1;
+            text-align: center;
+        }
+
+        .action-icon {
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            image-rendering: pixelated;
+        }
+
+        .retro-btn .sparkle-icon {
+            color: #ffffff;
+            filter: drop-shadow(2px 2px 0 rgba(27, 35, 64, 0.24));
+        }
+
+        .retro-btn.secondary .lotus-icon {
+            color: #9b64f2;
+        }
+
+        .action-arrow {
+            flex: 0 0 auto;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 13px solid var(--dark);
+            filter: drop-shadow(2px 0 0 rgba(27, 35, 64, 0.18));
+        }
+
         /* ===== 心情选择页面 - 像素风格 ===== */
         .mood-page .page-title {
             font-family: var(--font-pixel);
@@ -1346,13 +1385,40 @@
         }
 
         .nav-icon {
-            font-size: 24px;
+            width: 32px;
+            height: 32px;
             margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            filter: drop-shadow(2px 2px 0 rgba(255, 63, 143, 0.28));
+        }
+
+        .pixel-nav-icon {
+            width: 32px;
+            height: 32px;
+            display: block;
+            overflow: visible;
+            image-rendering: pixelated;
         }
 
         .nav-item.active {
-            color: #79e1d6;
-            text-shadow: 0 0 10px #79e1d6;
+            color: var(--dark);
+            text-shadow: none;
+            position: relative;
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 2px;
+            height: 5px;
+            background: var(--primary);
+            border-radius: 999px;
+            box-shadow: 0 0 8px rgba(249, 147, 190, 0.75);
         }
 
         /* ===== 全局颜色统一（保留原有排版和动效） ===== */
@@ -1741,3 +1807,182 @@
             background: var(--primary);
             border-radius: 4px;
         } */
+
+        /* ===== Dynamic island bottom navigation ===== */
+        .bottom-nav {
+            --nav-glow-x: 50%;
+            --nav-glow-y: 50%;
+            position: fixed;
+            left: 50%;
+            bottom: max(18px, env(safe-area-inset-bottom));
+            width: min(88vw, 420px);
+            height: 92px;
+            padding: 10px 18px;
+            transform: translateX(-50%);
+            overflow: hidden;
+            justify-content: space-around;
+            gap: 10px;
+            border: 2px solid rgba(157, 105, 246, 0.65);
+            border-radius: 999px;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 246, 0.76)),
+                radial-gradient(circle at 18% 12%, rgba(121, 225, 214, 0.28), transparent 36%),
+                radial-gradient(circle at 84% 82%, rgba(249, 147, 190, 0.28), transparent 34%);
+            box-shadow:
+                0 16px 28px rgba(91, 64, 137, 0.18),
+                0 0 18px rgba(249, 147, 190, 0.28),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(18px) saturate(1.2);
+            isolation: isolate;
+        }
+
+        .bottom-nav::before {
+            content: '';
+            position: absolute;
+            inset: -18px;
+            z-index: 0;
+            background:
+                radial-gradient(
+                    ellipse 170px 84px at calc(var(--nav-glow-x) + 18px) calc(var(--nav-glow-y) + 18px),
+                    rgba(255, 255, 255, 0.42) 0%,
+                    rgba(121, 225, 214, 0.2) 34%,
+                    rgba(249, 147, 190, 0.15) 58%,
+                    transparent 84%
+                ),
+                radial-gradient(
+                    ellipse 118px 62px at calc(var(--nav-glow-x) + 46px) calc(var(--nav-glow-y) + 10px),
+                    rgba(157, 105, 246, 0.13) 0%,
+                    transparent 78%
+                );
+            opacity: 0;
+            filter: blur(14px) saturate(1.06);
+            mix-blend-mode: soft-light;
+            transition: opacity 0.24s ease;
+            pointer-events: none;
+        }
+
+        .bottom-nav::after {
+            content: none;
+        }
+
+        .bottom-nav.nav-glowing::before {
+            opacity: 0.96;
+        }
+
+        .bottom-nav:active::before {
+            background:
+                radial-gradient(
+                    ellipse 178px 90px at calc(var(--nav-glow-x) + 18px) calc(var(--nav-glow-y) + 18px),
+                    rgba(255, 255, 255, 0.46) 0%,
+                    rgba(121, 225, 214, 0.24) 34%,
+                    rgba(249, 147, 190, 0.17) 58%,
+                    transparent 84%
+                ),
+                radial-gradient(
+                    ellipse 124px 66px at calc(var(--nav-glow-x) + 46px) calc(var(--nav-glow-y) + 10px),
+                    rgba(157, 105, 246, 0.15) 0%,
+                    transparent 78%
+                );
+        }
+
+        .bottom-nav > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /*
+            Pointer movement eases --nav-glow-x/y in JS, creating a soft material
+            highlight around the cursor or finger without a separate light dot.
+        */
+        .bottom-nav:hover::before,
+        .bottom-nav:focus-within::before {
+            opacity: 0.96;
+        }
+
+        .nav-item {
+            position: relative;
+            isolation: isolate;
+            width: 118px;
+            height: 68px;
+            border-radius: 999px;
+            color: #6d7594;
+            overflow: hidden;
+            transition: transform 0.2s ease, color 0.2s ease, filter 0.2s ease;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            z-index: -1;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(121, 225, 214, 0.18), rgba(249, 147, 190, 0.18));
+            opacity: 0;
+            transform: scale(0.88);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item:focus-visible,
+        .nav-item:active {
+            color: var(--dark);
+            transform: translateY(-2px);
+            filter: brightness(1.04);
+        }
+
+        .nav-item:hover::before,
+        .nav-item:focus-visible::before,
+        .nav-item:active::before,
+        .nav-item.active::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .nav-item.active {
+            color: var(--dark);
+        }
+
+        .nav-item.active::after {
+            left: 38px;
+            right: 38px;
+            bottom: 5px;
+            height: 4px;
+        }
+
+        .nav-item.nav-bump {
+            animation: navPixelBump 0.24s ease-out;
+        }
+
+        .nav-icon {
+            margin-bottom: 5px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .nav-item:hover .nav-icon,
+        .nav-item:focus-visible .nav-icon,
+        .nav-item:active .nav-icon {
+            transform: translateY(-1px) scale(1.04);
+            filter: drop-shadow(2px 2px 0 rgba(255, 63, 143, 0.42));
+        }
+
+        .page {
+            padding-bottom: 150px;
+        }
+
+        @keyframes navPixelBump {
+            0%, 100% {
+                transform: translateX(0) translateY(0) scale(1);
+            }
+            18% {
+                transform: translateX(-1px) translateY(-2px) scale(1.04);
+            }
+            34% {
+                transform: translateX(2px) translateY(1px) scale(0.98);
+            }
+            52% {
+                transform: translateX(-2px) translateY(0) scale(1.02);
+            }
+            72% {
+                transform: translateX(1px) translateY(-1px) scale(1);
+            }
+        }

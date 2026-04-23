@@ -14,14 +14,22 @@ export function createRouter({ cursorGlow } = {}) {
 
     function updateNav(active) {
         const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => item.classList.remove('active'));
+        navItems.forEach(item => item.classList.remove('active', 'nav-bump'));
+
+        function activate(item) {
+            if (!item) return;
+            window.clearTimeout(item.navBumpTimer);
+            void item.offsetWidth;
+            item.classList.add('active', 'nav-bump');
+            item.navBumpTimer = window.setTimeout(() => item.classList.remove('nav-bump'), 260);
+        }
 
         if (active === 'home') {
-            navItems[0]?.classList.add('active');
+            activate(navItems[0]);
         }
 
         if (active === 'profile') {
-            navItems[1]?.classList.add('active');
+            activate(navItems[1]);
         }
     }
 
