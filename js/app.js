@@ -2,7 +2,7 @@ import { calorieAnalogies, moodOutcomes, moodPlans, moodProfiles, paceDescriptio
 import { avatarOptions, createAvatarSvg, getAvatarLabel, loadAvatar, randomAvatar, saveAvatar } from './avatar.js';
 import { initCursorGlow, initGravityGrid, initNavGlow, selectSound, showCelebration, startBreathing, startPixelFireworks, stopBreathing, stopPixelFireworks } from './effects.js';
 import { createRouter } from './router.js';
-import { formatPace, formatTime, getActivePlan, makeRunRecord, startRunSimulation } from './runTracker.js';
+import { formatPace, formatTime, getActivePlan, makeRunRecord, startRunTracking } from './runTracker.js';
 import { loadRunHistory, saveRunHistory } from './storage.js';
 
 const router = createRouter({
@@ -17,13 +17,26 @@ const state = {
     aiSuggestedMood: null,
     selectedPlan: null,
     customPlans: [],
-    runData: { distance: 0, pace: 0, time: 0, calories: 0 },
+    runData: {
+        distance: 0,
+        pace: 0,
+        currentPace: null,
+        averagePace: null,
+        time: 0,
+        calories: 0,
+        remainingDistance: 0,
+        accuracy: null,
+        hasLocationFix: false,
+        routePointCount: 0,
+        gpsQuality: 'SEARCHING'
+    },
     runHistory: loadRunHistory(),
     lastMoodShift: null,
     avatar: savedAvatar,
     avatarDraft: { ...savedAvatar },
     musicEnabled: true,
-    runInterval: null,
+    runTestMode: false,
+    runSession: null,
     runSaved: false
 };
 
@@ -203,8 +216,8 @@ const app = {
     },
 
     startRun() {
-        if (this.runInterval) {
-            clearInterval(this.runInterval);
+        if (this.runSession) {
+            this.runSession.stop();
         }
 
         this.showPage('runningPage');
@@ -213,10 +226,18 @@ const app = {
         this.runData = {
             distance: 0,
             pace: 0,
+            currentPace: null,
+            averagePace: null,
             time: 0,
             calories: 0,
+            remainingDistance: activePlan.targetDistance,
+            accuracy: null,
             targetDistance: activePlan.targetDistance,
-            planName: activePlan.name
+            planName: activePlan.name,
+            hasLocationFix: false,
+            routePointCount: 0,
+            gpsQuality: 'SEARCHING',
+            lastTrackingError: null
         };
         this.musicEnabled = true;
         this.runSaved = false;
@@ -225,8 +246,9 @@ const app = {
         const musicToggle = document.getElementById('musicToggle');
         musicToggle.classList.add('active');
         musicToggle.querySelector('span:last-child').textContent = 'ON';
+        this.renderRunModeToggle();
 
-        this.runInterval = startRunSimulation(this, {
+        this.runSession = startRunTracking(this, {
             onCheckpoint: showCelebration,
             onComplete: () => this.finishRun()
         });
@@ -240,6 +262,20 @@ const app = {
         button.querySelector('span:last-child').textContent = this.musicEnabled ? 'ON' : 'OFF';
     },
 
+    toggleRunTestMode() {
+        this.runTestMode = !this.runTestMode;
+        this.renderRunModeToggle();
+
+        if (document.getElementById('runningPage')?.classList.contains('active') && !this.runSaved) {
+            if (this.runSession) {
+                this.runSession.stop();
+                this.runSession = null;
+            }
+
+            this.startRun();
+        }
+    },
+
     stopRun() {
         this.finishRun();
     },
@@ -247,9 +283,9 @@ const app = {
     finishRun() {
         if (this.runSaved) return;
 
-        if (this.runInterval) {
-            clearInterval(this.runInterval);
-            this.runInterval = null;
+        if (this.runSession) {
+            this.runSession.stop();
+            this.runSession = null;
         }
 
         this.saveRunToHistory();
@@ -258,6 +294,10 @@ const app = {
     },
 
     saveRunToHistory() {
+        if (!this.runData.hasLocationFix && this.runData.distance <= 0) {
+            return;
+        }
+
         const run = makeRunRecord(this);
         this.runHistory.unshift(run);
         saveRunHistory(this.runHistory);
@@ -267,7 +307,7 @@ const app = {
         this.showPage('summaryPage');
 
         document.getElementById('summaryDistance').textContent = `${this.runData.distance.toFixed(2)} KM`;
-        document.getElementById('summaryPace').textContent = `${formatPace(this.runData.pace)} /KM`;
+        document.getElementById('summaryPace').textContent = `${formatPace(this.runData.averagePace ?? this.runData.pace)} /KM`;
         document.getElementById('summaryTime').textContent = formatTime(this.runData.time);
 
         const beforeMood = (this.currentMood || 'neutral').toUpperCase();
@@ -279,9 +319,12 @@ const app = {
 
         const paceEl = document.getElementById('summaryPace');
         paceEl.className = 'summary-stat-value';
-        if (this.runData.pace < 5) paceEl.classList.add('fast');
-        else if (this.runData.pace < 6.5) paceEl.classList.add('medium');
-        else paceEl.classList.add('slow');
+        const summaryPace = this.runData.averagePace ?? this.runData.pace;
+        if (Number.isFinite(summaryPace)) {
+            if (summaryPace < 5) paceEl.classList.add('fast');
+            else if (summaryPace < 6.5) paceEl.classList.add('medium');
+            else paceEl.classList.add('slow');
+        }
 
         const analogy = calorieAnalogies.find(item => this.runData.calories <= item.cal) || calorieAnalogies[calorieAnalogies.length - 1];
         document.getElementById('calorieAnalogy').textContent = analogy.text;
@@ -385,6 +428,18 @@ const app = {
         saveAvatar(this.avatar);
         this.renderCurrentAvatar();
         this.goHome();
+    },
+
+    renderRunModeToggle() {
+        const modeToggle = document.getElementById('runModeToggle');
+        if (!modeToggle) return;
+
+        modeToggle.classList.toggle('active', this.runTestMode);
+        modeToggle.textContent = this.runTestMode ? 'TEST' : 'LIVE';
+        modeToggle.setAttribute(
+            'aria-label',
+            this.runTestMode ? 'Switch to live GPS tracking' : 'Switch to desktop test mode'
+        );
     },
 
     selectSound
@@ -543,11 +598,12 @@ initCursorGlow(document.getElementById('cursorGlow'));
 initGravityGrid(document.getElementById('gravityGrid'));
 initNavGlow(document.querySelector('.bottom-nav'));
 app.renderCurrentAvatar();
+app.renderRunModeToggle();
 router.updateNav('home');
 window.app = app;
 
 window.addEventListener('beforeunload', () => {
-    if (app.runInterval) clearInterval(app.runInterval);
+    if (app.runSession) app.runSession.stop();
     stopBreathing();
     stopPixelFireworks();
 });

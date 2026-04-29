@@ -1,41 +1,95 @@
 import { moodCheckpoints, moodPlans, runPlanOptions } from './data.js';
+import { createLocationService } from './locationService.js';
+import { createRunMetrics } from './metricsEngine.js';
 
-export function startRunSimulation(state, { onCheckpoint, onComplete }) {
+export function startRunTracking(state, { onCheckpoint, onComplete }) {
     const plan = getActivePlan(state);
     const checkpoints = moodCheckpoints[state.currentMood] || moodCheckpoints.neutral;
+    const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
     let nextCheckpointIndex = 0;
     let completed = false;
+    let stopped = false;
 
     resetRunDisplay(plan);
+    updateRunStatus('Requesting GPS access...', 'info');
 
-    const timer = setInterval(() => {
-        state.runData.time++;
-        state.runData.targetDistance = plan.targetDistance;
-        state.runData.planName = plan.name;
-        state.runData.pace = randomBetween(plan.paceRange[0], plan.paceRange[1]);
-        state.runData.distance = Math.min(
-            plan.targetDistance,
-            state.runData.distance + getDemoStep(plan)
-        );
-        state.runData.calories = Math.floor(state.runData.distance * 60);
+    const syncFromSnapshot = snapshot => {
+        const livePace = snapshot.currentPace ?? snapshot.averagePace;
 
-        const progress = updateRunDisplay(state.runData, plan);
+        state.runData = {
+            ...state.runData,
+            distance: snapshot.distanceKm,
+            pace: snapshot.averagePace ?? 0,
+            currentPace: livePace ?? null,
+            averagePace: snapshot.averagePace ?? null,
+            time: snapshot.elapsedSec,
+            calories: snapshot.calories,
+            remainingDistance: snapshot.remainingDistanceKm,
+            accuracy: snapshot.currentAccuracy,
+            targetDistance: plan.targetDistance,
+            planName: plan.name,
+            hasLocationFix: snapshot.hasLocationFix,
+            routePointCount: snapshot.routePointCount,
+            gpsQuality: snapshot.gpsQuality
+        };
 
+        const progress = updateRunDisplay(state.runData, plan, snapshot.routePreview);
+        triggerCheckpoints(progress);
+        triggerCompletion(progress);
+    };
+
+    const locationService = createLocationService({
+        useMock: !!state.runTestMode,
+        onStatus: ({ message, tone }) => {
+            updateRunStatus(message, tone);
+        },
+        onError: ({ message }) => {
+            state.runData.lastTrackingError = message;
+        },
+        onPosition: position => {
+            const result = metrics.addPosition(position);
+            updateTrackingFeedback(result, state.runTestMode);
+            const { snapshot } = result;
+            syncFromSnapshot(snapshot);
+        }
+    });
+
+    const timerId = window.setInterval(() => {
+        syncFromSnapshot(metrics.tick());
+    }, 1000);
+
+    function triggerCheckpoints(progress) {
         const nextCheckpoint = checkpoints[nextCheckpointIndex];
         if (nextCheckpoint && progress >= nextCheckpoint.progress) {
             onCheckpoint(nextCheckpoint.text);
             nextCheckpointIndex++;
         }
+    }
 
-        if (!completed && progress >= 100) {
-            completed = true;
-            clearInterval(timer);
-            onCheckpoint('TARGET COMPLETE!');
-            window.setTimeout(onComplete, 850);
+    function triggerCompletion(progress) {
+        if (completed || progress < 100) return;
+
+        completed = true;
+        stopTracking();
+        onCheckpoint('TARGET COMPLETE!');
+        window.setTimeout(onComplete, 850);
+    }
+
+    function stopTracking() {
+        if (stopped) return;
+        stopped = true;
+        window.clearInterval(timerId);
+        locationService.stop();
+    }
+
+    locationService.start();
+    syncFromSnapshot(metrics.tick());
+
+    return {
+        stop() {
+            stopTracking();
         }
-    }, 1000);
-
-    return timer;
+    };
 }
 
 export function makeRunRecord(state) {
@@ -44,7 +98,8 @@ export function makeRunRecord(state) {
         mood: state.currentMood,
         thought: state.currentThought,
         distance: state.runData.distance,
-        pace: state.runData.pace,
+        pace: state.runData.averagePace ?? state.runData.pace ?? 0,
+        currentPace: state.runData.currentPace ?? null,
         time: state.runData.time,
         calories: state.runData.calories,
         plan: state.selectedPlan,
@@ -55,11 +110,29 @@ export function makeRunRecord(state) {
 }
 
 export function formatPace(pace) {
-    return `${Math.floor(pace)}:${String(Math.floor((pace % 1) * 60)).padStart(2, '0')}`;
+    if (!Number.isFinite(pace) || pace <= 0) {
+        return '--:--';
+    }
+
+    const minutes = Math.floor(pace);
+    const seconds = Math.round((pace % 1) * 60);
+    const normalizedMinutes = seconds === 60 ? minutes + 1 : minutes;
+    const normalizedSeconds = seconds === 60 ? 0 : seconds;
+
+    return `${normalizedMinutes}:${String(normalizedSeconds).padStart(2, '0')}`;
 }
 
 export function formatTime(seconds) {
-    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    const totalSeconds = Math.max(0, Math.floor(seconds || 0));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainder = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+    }
+
+    return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
 export function getActivePlan(state) {
@@ -70,41 +143,45 @@ export function getActivePlan(state) {
     return runPlanOptions[state.selectedPlan] || moodPlans[state.currentMood] || moodPlans.neutral;
 }
 
-function randomBetween(min, max) {
-    return min + Math.random() * (max - min);
-}
-
-function getDemoStep(plan) {
-    const baseStep = plan.targetDistance / plan.demoDuration;
-    return baseStep * randomBetween(0.82, 1.18);
-}
-
 function resetRunDisplay(plan) {
     document.getElementById('distanceDisplay').textContent = '0.00';
     document.getElementById('paceDisplay').textContent = '--:--';
+    document.getElementById('avgPaceDisplay').textContent = '--:--';
     document.getElementById('timeDisplay').textContent = '00:00';
     document.getElementById('calDisplay').textContent = '0';
+    document.getElementById('remainingDistanceDisplay').textContent = `${plan.targetDistance.toFixed(2)} KM LEFT`;
+    document.getElementById('routePointCount').textContent = '0 PTS';
+    document.getElementById('gpsQualityLabel').textContent = 'SEARCHING';
+    document.getElementById('runAccuracyDisplay').textContent = 'ACC --';
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('progressPercent').textContent = '0%';
     document.getElementById('runTargetLabel').textContent = `TARGET ${plan.dist}`;
     document.querySelectorAll('.pace-zone').forEach(zone => zone.classList.remove('active'));
+    updateRoutePreview({ polyline: '', start: null, current: null });
 
     const runActionBtn = document.getElementById('runActionBtn');
     if (runActionBtn) runActionBtn.textContent = 'STOP RUN';
 }
 
-function updateRunDisplay(runData, plan) {
+function updateRunDisplay(runData, plan, routePreview) {
     const progress = Math.min((runData.distance / plan.targetDistance) * 100, 100);
 
     document.getElementById('distanceDisplay').textContent = runData.distance.toFixed(2);
-    document.getElementById('paceDisplay').textContent = formatPace(runData.pace);
+    document.getElementById('paceDisplay').textContent = formatPace(runData.currentPace);
+    document.getElementById('avgPaceDisplay').textContent = formatPace(runData.averagePace);
     document.getElementById('timeDisplay').textContent = formatTime(runData.time);
     document.getElementById('calDisplay').textContent = runData.calories;
+    document.getElementById('remainingDistanceDisplay').textContent = `${runData.remainingDistance.toFixed(2)} KM LEFT`;
+    document.getElementById('routePointCount').textContent = `${runData.routePointCount} PTS`;
+    document.getElementById('gpsQualityLabel').textContent = runData.gpsQuality || 'SEARCHING';
+    document.getElementById('runAccuracyDisplay').textContent = Number.isFinite(runData.accuracy)
+        ? `ACC ${Math.round(runData.accuracy)}M`
+        : 'ACC --';
     document.getElementById('progressFill').style.width = `${progress}%`;
     document.getElementById('progressPercent').textContent = `${Math.floor(progress)}%`;
 
-    updateRunnerPosition(progress);
-    updatePaceZone(runData.pace);
+    updateRoutePreview(routePreview);
+    updatePaceZone(runData.currentPace ?? runData.averagePace);
 
     if (progress >= 100) {
         const runActionBtn = document.getElementById('runActionBtn');
@@ -114,24 +191,93 @@ function updateRunDisplay(runData, plan) {
     return progress;
 }
 
-function updateRunnerPosition(progress) {
+function updateRunStatus(message, tone = 'info') {
+    const statusLabel = document.getElementById('runStatusLabel');
+    if (!statusLabel) return;
+
+    statusLabel.textContent = message;
+    statusLabel.dataset.tone = tone;
+}
+
+function updateTrackingFeedback(result, isTestMode) {
+    const accuracy = result.snapshot.currentAccuracy;
+    const roundedAccuracy = Number.isFinite(accuracy) ? Math.round(accuracy) : null;
+
+    if (isTestMode) {
+        updateRunStatus('Desktop test route active. Simulated movement is feeding the tracker.', 'test');
+        return;
+    }
+
+    if (result.accepted && result.snapshot.routePointCount > 1) {
+        updateRunStatus(
+            roundedAccuracy !== null
+                ? `Tracking live. Current accuracy ${roundedAccuracy}m.`
+                : 'Tracking live.',
+            'ready'
+        );
+        return;
+    }
+
+    if (result.accepted && result.snapshot.routePointCount === 1) {
+        updateRunStatus(
+            roundedAccuracy !== null
+                ? `Location captured at ${roundedAccuracy}m accuracy. Start moving to build distance.`
+                : 'Location captured. Start moving to build distance.',
+            'ready'
+        );
+        return;
+    }
+
+    if (result.reason === 'accuracy') {
+        updateRunStatus(
+            roundedAccuracy !== null
+                ? `Location found, but accuracy is still ${roundedAccuracy}m. Waiting for a clearer fix.`
+                : 'Location found, but accuracy is still weak. Waiting for a clearer fix.',
+            'warning'
+        );
+        return;
+    }
+
+    if (result.reason === 'jitter') {
+        updateRunStatus('Position is stable. Start moving to begin distance tracking.', 'info');
+        return;
+    }
+
+    if (result.reason === 'speed') {
+        updateRunStatus('A large GPS jump was ignored. Waiting for a stable position update.', 'warning');
+    }
+}
+
+function updateRoutePreview(routePreview) {
+    const routeTrail = document.getElementById('routeTrail');
+    const routeStart = document.getElementById('routeStart');
     const runnerPos = document.getElementById('runnerPosition');
-    if (!runnerPos) return;
 
-    const pathProgress = Math.min(progress / 100, 1);
-    const startX = 20;
-    const startY = 120;
-    const endX = 280;
-    const endY = 40;
-    const currentX = startX + (endX - startX) * pathProgress;
-    const currentY = startY + (endY - startY) * pathProgress - Math.sin(pathProgress * Math.PI) * 40;
+    if (routeTrail) {
+        routeTrail.setAttribute('points', routePreview?.polyline || '');
+    }
 
-    runnerPos.setAttribute('cx', currentX);
-    runnerPos.setAttribute('cy', currentY);
+    if (routeStart && routePreview?.start) {
+        routeStart.hidden = false;
+        routeStart.setAttribute('cx', routePreview.start.x);
+        routeStart.setAttribute('cy', routePreview.start.y);
+    } else if (routeStart) {
+        routeStart.hidden = true;
+    }
+
+    if (runnerPos && routePreview?.current) {
+        runnerPos.setAttribute('cx', routePreview.current.x);
+        runnerPos.setAttribute('cy', routePreview.current.y);
+    } else if (runnerPos) {
+        runnerPos.setAttribute('cx', '150');
+        runnerPos.setAttribute('cy', '75');
+    }
 }
 
 function updatePaceZone(pace) {
     document.querySelectorAll('.pace-zone').forEach(zone => zone.classList.remove('active'));
+
+    if (!Number.isFinite(pace)) return;
 
     if (pace < 5) {
         document.getElementById('zoneFast').classList.add('active');
