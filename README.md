@@ -108,8 +108,14 @@ This repository is ready for static deployment.
 
 - GitHub Pages works because Vite uses `base: './'` and the app uses hash routing.
 - Vercel also works well for the same build output.
+- The recommended release flow is: develop on `vue-migration`, merge the final Vue app into `main`, and let GitHub Actions deploy Pages automatically from `main`.
 
-For GitHub Pages, deploy the generated `dist/` output from the repository root project.
+For GitHub Pages, this repository already includes [deploy-pages.yml](/abs/path/d:/CPT208/MoodRun/CPT208-D7-MoodRun-System/.github/workflows/deploy-pages.yml:1), which builds the app and deploys the generated `dist/` output automatically when `main` is updated.
+
+Recommended repository roles:
+
+- `main`: final release branch that GitHub Pages deploys from.
+- `vue-migration`: active development branch for architecture and feature work before merging.
 
 ## Coursework Notes
 
