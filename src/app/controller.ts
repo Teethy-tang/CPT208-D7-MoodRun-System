@@ -24,7 +24,7 @@ import {
 } from '../features/run-session/runTracker';
 import { defaultPageByRoute, pageRouteMap } from './router';
 import { useMoodRunStore } from './stores/moodRun';
-import { saveRunHistory } from '../services/storage/runHistory';
+import { loadRunHistory, saveRunHistory } from '../services/storage/runHistory';
 import {
   initCursorGlow,
   initGravityGrid,
@@ -138,6 +138,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     if (routeName === 'profile') {
       updateNav('profile');
+      renderCurrentAvatar();
       if (targetPage === 'profilePage') {
         updateProfile();
       }
@@ -322,6 +323,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   async function goToProfile() {
     await showPage('profilePage');
     updateNav('profile');
+    renderCurrentAvatar();
     updateProfile();
   }
 
@@ -486,8 +488,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     }
 
     const run = makeRunRecord(state);
-    state.runHistory.unshift(run);
-    saveRunHistory(state.runHistory);
+    const nextHistory = [run, ...loadRunHistory()];
+    state.runHistory = nextHistory;
+    saveRunHistory(nextHistory);
   }
 
   async function showSummary() {
@@ -541,6 +544,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   }
 
   function updateProfile() {
+    state.runHistory = loadRunHistory();
+
     const totalRuns = state.runHistory.length;
     const totalDist = state.runHistory.reduce((sum, run) => sum + run.distance, 0);
     const historyList = document.getElementById('historyList');

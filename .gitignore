@@ -1,1 +1,12 @@
 .npm-cache/
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.log
+*.local
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

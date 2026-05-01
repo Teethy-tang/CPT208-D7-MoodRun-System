@@ -1,118 +1,118 @@
 # MoodRun
 
-MoodRun is a human-centric running companion web app. It helps runners choose a run based on their current mood, complete a playful simulated run, review their effort, and reflect with a short wisdom message afterwards.
+MoodRun is the Vue 3 coursework version of a playful running companion web app. It keeps the original SPA's mood-to-run flow, retro visual style, and localStorage data format while moving the codebase into a cleaner architecture built with Vite, TypeScript, Vue Router, and Pinia.
 
-The project is designed as a lightweight front-end prototype for the CPT208 coursework System Development requirement.
+## Live Links
 
-## Live System
+- Portfolio URL: `TODO`
+- System URL: `TODO`
+- Repository URL: `TODO`
 
-- Live URL: TODO - add the GitHub Pages or Vercel URL after deployment
-- Source code repository: TODO - add the group GitHub repository URL
+## What This Repository Contains
 
-## Core Feature Set
+This branch is the cleaned Vue delivery version of the project.
 
-The current prototype already supports these must-have interactive features:
+- `main` keeps the original static SPA for reference and rollback.
+- This branch keeps only the Vue implementation and coursework materials needed for final submission.
+- `ai-logs/` is preserved for AI usage disclosure.
 
-1. Mood check-in: users select an emotional state and optionally write down what is on their mind.
-2. Mood-based run recommendation: the app suggests a run plan based on the selected mood.
-3. Running simulation: distance, pace, duration, calories, progress, route marker, music toggle, and celebration messages update during the run.
-4. Run summary and wisdom book: users see a post-run summary and reveal a reflection quote.
-5. Profile and history: completed runs are saved with localStorage and displayed in the profile screen.
-6. Meditation mode: users can follow a breathing rhythm and select simple ambient sound categories.
+## Core User Flow
 
-## Responsive Design
+MoodRun currently supports:
 
-The interface is built as a mobile-first single-page web app with retro arcade styling. The CSS includes responsive rules for smaller screens and keeps the main interaction flow usable on mobile and desktop browsers.
+1. Mood selection with optional user reflection text.
+2. Mood-based run plan recommendation and custom plan flow.
+3. Simulated run tracking with distance, pace, duration, calories, progress, and route feedback.
+4. Post-run summary and wisdom reflection.
+5. Profile, avatar, and run history backed by localStorage.
+6. Meditation and ambient sound interactions.
 
-## Technologies Used
+## Tech Stack
 
-- HTML5
-- CSS3
-- JavaScript ES Modules
-- localStorage for browser-side run history
-- Python static server for local development
-- GitHub Pages or Vercel for planned deployment
-
-No heavy framework is used at this stage. This keeps the prototype easy for the coursework team to understand, maintain, and deploy.
+- Vue 3
+- Vite
+- TypeScript
+- Vue Router
+- Pinia
+- localStorage
 
 ## Project Structure
 
 ```text
-MoodRun/
-+-- index.html             # Main single-page app markup and screen sections
-+-- README.md              # Setup, architecture, features, and coursework notes
-+-- ai-logs/               # Primary AI prompts and development logs
-|   +-- 2026-04-22-refactor.md
-+-- assets/                # Future images, sounds, icons, or other media
-|   +-- .gitkeep
-+-- css/
-|   +-- styles.css         # Visual design, layout, animations, responsive rules
-+-- js/
-    +-- app.js             # App state coordinator and screen action methods
-    +-- data.js            # Mood plans, quotes, checkpoints, and copy data
-    +-- effects.js         # Cursor glow, celebrations, fireworks, breathing timer
-    +-- router.js          # Screen switching and bottom navigation state
-    +-- runTracker.js      # Run simulation, progress updates, and formatting
-    +-- storage.js         # localStorage helpers
+.
+|-- ai-logs/
+|-- src/
+|   |-- app/
+|   |   |-- router/
+|   |   |-- stores/
+|   |   |-- controller.ts
+|   |   |-- main.ts
+|   |   `-- shell.css
+|   |-- assets/
+|   |   `-- css/
+|   |-- features/
+|   |   |-- mood-engine/
+|   |   |-- profile/
+|   |   `-- run-session/
+|   |-- pages/
+|   |-- services/
+|   |   |-- storage/
+|   |   `-- ui/
+|   |-- types/
+|   |-- App.vue
+|   `-- main.ts
+|-- index.html
+|-- package.json
+|-- vite.config.ts
+`-- README.md
 ```
 
-## App Architecture
+## Architecture Notes
 
-MoodRun currently uses one `index.html` file with multiple screen sections. JavaScript switches between these sections, so the app behaves like a small single-page application.
+- `src/pages/` holds the high-level route screens: Home, Mood, Run, Summary, and Profile.
+- `src/app/controller.ts` is the current migration bridge that preserves original behavior while the app is still being incrementally refined.
+- `src/app/stores/` holds shared application state in Pinia.
+- `src/features/` contains domain-oriented logic such as avatar generation, mood plan data, and run-session tracking.
+- `src/services/storage/` keeps localStorage compatibility with the original app.
+- `src/assets/css/styles.css` is the migrated visual system, kept close to the original for parity.
 
-This structure is intentional because the current flow shares temporary state across mood check-in, run setup, tracking, summary, wisdom, profile, and meditation. Splitting the prototype into separate HTML pages too early would make state handling more complex without improving the user experience.
+## Local Development
 
-## Data Handling
-
-MoodRun stores completed run history in the browser with `localStorage`.
-
-- `js/storage.js` reads and writes saved runs.
-- `js/app.js` coordinates the current mood, thought, selected plan, active run, and profile updates.
-- `js/runTracker.js` creates run records after the simulation stops.
-
-The current data is local to the user's browser. There is no server database in this prototype.
-
-## Accessibility And Web Standards
-
-The system uses semantic HTML where practical, responsive CSS, readable contrast within the existing retro visual style, and button-based interaction for the main user flow. Future development should improve keyboard focus states, form labels, and reduced-motion support.
-
-## How To Run Locally
-
-Because the JavaScript uses ES modules, run the project through a local static server:
+Install dependencies:
 
 ```bash
-python -m http.server 5500
+npm install
 ```
 
-Then open:
+Start the development server:
 
-```text
-http://localhost:5500/index.html
+```bash
+npm run dev
 ```
 
-You can also use VS Code Live Server.
+Build for production:
 
-## Deployment Notes
+```bash
+npm run build
+```
 
-The app is static and can be deployed to GitHub Pages or Vercel.
+Preview the production build locally:
 
-For GitHub Pages:
+```bash
+npm run preview
+```
 
-1. Push the repository to GitHub.
-2. Open repository Settings.
-3. Go to Pages.
-4. Deploy from the main branch root folder.
-5. Copy the public URL into the Live System section above.
+## Deployment
 
-## AI Coding Logs
+This repository is ready for static deployment.
 
-AI-assisted development logs are stored in `ai-logs/`. These logs record the primary prompts used to generate or refactor core components, as required by the coursework brief.
+- GitHub Pages works because Vite uses `base: './'` and the app uses hash routing.
+- Vercel also works well for the same build output.
 
-## Next Development Tasks
+For GitHub Pages, deploy the generated `dist/` output from the repository root project.
 
-- Replace inline `onclick` attributes with JavaScript event listeners.
-- Persist custom plans in localStorage.
-- Finalise the three required must-have playful features from the requirements list.
-- Add the final live URL and GitHub repository URL.
-- Test the interface on the target device track, such as mobile or PC.
-- Improve accessibility details before final submission.
+## Coursework Notes
+
+- Keep `ai-logs/` in the final submission because the coursework requires AI-assisted development evidence.
+- Add final team details, live URLs, and contribution records before submission.
+- If the team later introduces Supabase or Leaflet, those should be added incrementally without breaking the current localStorage-compatible flow.
