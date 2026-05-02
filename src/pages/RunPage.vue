@@ -19,20 +19,8 @@ const app = getMoodRunController();
       <div class="run-accuracy-pill" id="runAccuracyDisplay">ACC --</div>
     </div>
     <div class="map-container">
-      <svg class="map-path" viewBox="0 0 300 150" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color: #e06991; stop-opacity: 1" />
-            <stop offset="50%" style="stop-color: #fff780; stop-opacity: 1" />
-            <stop offset="100%" style="stop-color: #a4dae9; stop-opacity: 1" />
-          </linearGradient>
-        </defs>
-        <polyline class="route-trail" id="routeTrail" points="" stroke="url(#pathGradient)" />
-        <circle id="routeStart" cx="150" cy="75" r="5" fill="#79e1d6" stroke="#fff" stroke-width="2" hidden></circle>
-        <circle id="runnerPosition" cx="20" cy="120" r="8" fill="#ffee00" stroke="#fff" stroke-width="2">
-          <animate attributeName="r" values="6;10;6" dur="1s" repeatCount="indefinite" />
-        </circle>
-      </svg>
+      <div class="run-map-canvas" id="runLiveMap" aria-label="Live run map"></div>
+      <div class="run-map-message" id="runMapMessage" aria-live="polite">LIVE MAP LOADING...</div>
       <div class="map-overlay">
         <span id="routePointCount">0 PTS</span>
         <span id="gpsQualityLabel">SEARCHING</span>

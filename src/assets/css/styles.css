@@ -1240,14 +1240,15 @@
 
         .map-container {
             background: rgba(0, 0, 0, 0.5);
-            height: 120px;
+            height: 168px;
             margin-bottom: 20px;
             position: relative;
             overflow: hidden;
             border: 2px solid var(--text-muted);
+            border-radius: 16px;
         }
 
-        .map-path {
+        .run-map-canvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -1255,14 +1256,22 @@
             height: 100%;
         }
 
-        .path-line,
-        .route-trail {
-            stroke-width: 4;
-            fill: none;
-            stroke-dasharray: 500;
-            stroke-dashoffset: 0;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .run-map-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            padding: 8px 12px;
+            border: 2px solid rgba(27, 35, 64, 0.14);
+            background: rgba(253, 251, 246, 0.82);
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            letter-spacing: 0.08em;
+            text-align: center;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
         }
 
         .map-overlay {
@@ -1276,6 +1285,48 @@
             gap: 10px;
             font-family: var(--font-pixel);
             font-size: 7px;
+            z-index: 18;
+            pointer-events: none;
+        }
+
+        .run-map-start-pin {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: #79e1d6;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 4px rgba(121, 225, 214, 0.25);
+        }
+
+        .run-map-runner-pin {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 35% 35%, #fff8a8 0%, #ffeb53 48%, #f6a623 100%);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 6px rgba(255, 235, 83, 0.18);
+            position: relative;
+        }
+
+        .run-map-runner-pin::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: inherit;
+            border: 2px solid rgba(255, 235, 83, 0.34);
+            animation: mapPulse 1.4s ease-out infinite;
+        }
+
+        @keyframes mapPulse {
+            0% {
+                transform: scale(0.7);
+                opacity: 0.9;
+            }
+
+            100% {
+                transform: scale(1.35);
+                opacity: 0;
+            }
         }
 
         .running-title {
@@ -3071,7 +3122,7 @@
             }
 
             .map-container {
-                height: 110px;
+                height: 152px;
                 margin-bottom: 14px;
             }
 

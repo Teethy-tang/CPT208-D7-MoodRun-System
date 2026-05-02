@@ -1,5 +1,6 @@
 import { moodCheckpoints, moodPlans, runPlanOptions } from '../mood-engine/data';
 import { createLocationService } from './locationService';
+import { createRunMap } from './runMap';
 import { createRunMetrics } from './metricsEngine';
 import type { MoodRunState, RunRecord, RunSessionHandle } from '../../types/moodrun';
 
@@ -12,12 +13,14 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
   const plan = getActivePlan(state);
   const checkpoints = moodCheckpoints[state.currentMood || 'neutral'];
   const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
+  const liveMap = createRunMap();
   let nextCheckpointIndex = 0;
   let completed = false;
   let stopped = false;
 
   resetRunDisplay(plan);
   updateRunStatus('Requesting GPS access...', 'info');
+  void liveMap.reset();
 
   const syncFromSnapshot = (snapshot: ReturnType<typeof metrics.tick>) => {
     const livePace = snapshot.currentPace ?? snapshot.averagePace;
@@ -40,7 +43,7 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
       lastTrackingError: state.runData.lastTrackingError,
     };
 
-    const progress = updateRunDisplay(state.runData, plan, snapshot.routePreview);
+    const progress = updateRunDisplay(state.runData, plan);
     triggerCheckpoints(progress);
     triggerCompletion(progress);
   };
@@ -55,6 +58,11 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
     },
     onPosition: (position) => {
       const result = metrics.addPosition(position);
+      liveMap.syncPosition(position, {
+        accepted: result.accepted,
+        reason: result.reason,
+        accuracy: result.snapshot.currentAccuracy,
+      });
       updateTrackingFeedback(result, state.runTestMode);
       syncFromSnapshot(result.snapshot);
     },
@@ -86,6 +94,7 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
     stopped = true;
     window.clearInterval(timerId);
     locationService.stop();
+    liveMap.destroy();
   }
 
   locationService.start();
@@ -164,17 +173,12 @@ function resetRunDisplay(plan: ReturnType<typeof getActivePlan>) {
   setText('progressPercent', '0%');
   setText('runTargetLabel', `TARGET ${plan.dist}`);
   document.querySelectorAll('.pace-zone').forEach((zone) => zone.classList.remove('active'));
-  updateRoutePreview({ polyline: '', start: null, current: null });
 
   const runActionBtn = document.getElementById('runActionBtn');
   if (runActionBtn) runActionBtn.textContent = 'STOP RUN';
 }
 
-function updateRunDisplay(
-  runData: MoodRunState['runData'],
-  plan: ReturnType<typeof getActivePlan>,
-  routePreview: ReturnType<ReturnType<typeof createRunMetrics>['tick']>['routePreview'],
-) {
+function updateRunDisplay(runData: MoodRunState['runData'], plan: ReturnType<typeof getActivePlan>) {
   const progress = Math.min((runData.distance / plan.targetDistance) * 100, 100);
 
   setText('distanceDisplay', runData.distance.toFixed(2));
@@ -189,7 +193,6 @@ function updateRunDisplay(
   setWidth('progressFill', `${progress}%`);
   setText('progressPercent', `${Math.floor(progress)}%`);
 
-  updateRoutePreview(routePreview);
   updatePaceZone(runData.currentPace ?? runData.averagePace);
 
   if (progress >= 100) {
@@ -252,32 +255,6 @@ function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMe
 
   if (result.reason === 'speed') {
     updateRunStatus('A large GPS jump was ignored. Waiting for a stable position update.', 'warning');
-  }
-}
-
-function updateRoutePreview(routePreview: { polyline: string; start: { x: number; y: number } | null; current: { x: number; y: number } | null }) {
-  const routeTrail = document.getElementById('routeTrail');
-  const routeStart = document.getElementById('routeStart');
-  const runnerPos = document.getElementById('runnerPosition');
-
-  if (routeTrail) {
-    routeTrail.setAttribute('points', routePreview.polyline || '');
-  }
-
-  if (routeStart && routePreview.start) {
-    routeStart.hidden = false;
-    routeStart.setAttribute('cx', String(routePreview.start.x));
-    routeStart.setAttribute('cy', String(routePreview.start.y));
-  } else if (routeStart) {
-    routeStart.hidden = true;
-  }
-
-  if (runnerPos && routePreview.current) {
-    runnerPos.setAttribute('cx', String(routePreview.current.x));
-    runnerPos.setAttribute('cy', String(routePreview.current.y));
-  } else if (runnerPos) {
-    runnerPos.setAttribute('cx', '150');
-    runnerPos.setAttribute('cy', '75');
   }
 }
 
