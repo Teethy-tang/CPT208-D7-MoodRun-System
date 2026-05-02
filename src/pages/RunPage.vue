@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { nextTick, ref } from 'vue';
 import { getMoodRunController } from '../app/controller';
 
 const app = getMoodRunController();
+const isMapExpanded = ref(false);
+
+async function toggleMapExpansion() {
+  isMapExpanded.value = !isMapExpanded.value;
+  await nextTick();
+
+  window.dispatchEvent(new CustomEvent('moodrun:map-resize'));
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('moodrun:map-resize'));
+  }, 360);
+}
 </script>
 
 <template>
@@ -14,16 +26,24 @@ const app = getMoodRunController();
         <span>ON</span>
       </button>
     </div>
-    <div class="run-status-bar">
-      <div class="run-status-label" id="runStatusLabel" data-tone="info" aria-live="polite">Requesting GPS access...</div>
-      <div class="run-accuracy-pill" id="runAccuracyDisplay">ACC --</div>
-    </div>
-    <div class="map-container">
-      <div class="run-map-canvas" id="runLiveMap" aria-label="Live run map"></div>
-      <div class="run-map-message" id="runMapMessage" aria-live="polite">LIVE MAP LOADING...</div>
-      <div class="map-overlay">
-        <span id="routePointCount">0 PTS</span>
-        <span id="gpsQualityLabel">SEARCHING</span>
+    <div class="map-stage" :class="{ 'map-stage-expanded': isMapExpanded }">
+      <div class="map-container" :class="{ 'map-container-expanded': isMapExpanded }">
+        <div class="run-map-canvas" id="runLiveMap" aria-label="Live run map"></div>
+        <div class="run-map-message" id="runMapMessage" aria-live="polite">LIVE MAP LOADING...</div>
+        <div class="map-overlay">
+          <span id="routePointCount">0 PTS</span>
+          <span id="gpsQualityLabel">SEARCHING</span>
+        </div>
+        <button
+          class="map-expand-toggle"
+          type="button"
+          :aria-expanded="isMapExpanded"
+          aria-controls="runLiveMap"
+          @click="toggleMapExpansion"
+        >
+          <span class="map-expand-icon" aria-hidden="true">{{ isMapExpanded ? '^' : 'v' }}</span>
+          <span>{{ isMapExpanded ? 'CLOSE MAP' : 'VIEW MAP' }}</span>
+        </button>
       </div>
     </div>
     <div class="main-stats-display">

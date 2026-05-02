@@ -38,6 +38,12 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   let currentAccuracy: number | null = null;
   let pendingViewportSync = true;
   let destroyed = false;
+  const handleMapResize = () => {
+    if (!map || destroyed) return;
+
+    map.resize();
+    render();
+  };
 
   async function reset() {
     destroyed = false;
@@ -77,6 +83,7 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   function destroy() {
     destroyed = true;
     initPromise = null;
+    window.removeEventListener('moodrun:map-resize', handleMapResize);
     if (map) {
       map.destroy();
       map = null;
@@ -124,7 +131,6 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
         });
 
         polyline = new AMap.Polyline({
-          path: [],
           strokeColor: '#f993be',
           strokeWeight: 5,
           strokeOpacity: 0.95,
@@ -158,6 +164,7 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
         });
 
         map.add([polyline, startMarker, currentMarker, accuracyCircle]);
+        window.addEventListener('moodrun:map-resize', handleMapResize);
         setMessage('');
       })();
     }
@@ -168,7 +175,6 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   function clearOverlays() {
     if (!polyline || !startMarker || !currentMarker || !accuracyCircle) return;
 
-    polyline.setPath([]);
     polyline.hide();
     startMarker.hide();
     currentMarker.hide();
@@ -190,7 +196,6 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
       polyline.setPath(routePath);
       polyline.show();
     } else {
-      polyline.setPath([]);
       polyline.hide();
     }
 

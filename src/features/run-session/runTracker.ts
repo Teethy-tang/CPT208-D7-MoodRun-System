@@ -168,7 +168,6 @@ function resetRunDisplay(plan: ReturnType<typeof getActivePlan>) {
   setText('remainingDistanceDisplay', `${plan.targetDistance.toFixed(2)} KM LEFT`);
   setText('routePointCount', '0 PTS');
   setText('gpsQualityLabel', 'SEARCHING');
-  setText('runAccuracyDisplay', 'ACC --');
   setWidth('progressFill', '0%');
   setText('progressPercent', '0%');
   setText('runTargetLabel', `TARGET ${plan.dist}`);
@@ -189,7 +188,6 @@ function updateRunDisplay(runData: MoodRunState['runData'], plan: ReturnType<typ
   setText('remainingDistanceDisplay', `${runData.remainingDistance.toFixed(2)} KM LEFT`);
   setText('routePointCount', `${runData.routePointCount} PTS`);
   setText('gpsQualityLabel', runData.gpsQuality || 'SEARCHING');
-  setText('runAccuracyDisplay', Number.isFinite(runData.accuracy) ? `ACC ${Math.round(runData.accuracy as number)}M` : 'ACC --');
   setWidth('progressFill', `${progress}%`);
   setText('progressPercent', `${Math.floor(progress)}%`);
 
@@ -203,12 +201,8 @@ function updateRunDisplay(runData: MoodRunState['runData'], plan: ReturnType<typ
   return progress;
 }
 
-function updateRunStatus(message: string, tone = 'info') {
-  const statusLabel = document.getElementById('runStatusLabel');
-  if (!statusLabel) return;
-
-  statusLabel.textContent = message;
-  statusLabel.dataset.tone = tone;
+function updateRunStatus(_message: string, _tone = 'info') {
+  // Kept as a callback bridge for the tracker while the visible GPS status bar is hidden.
 }
 
 function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMetrics>['addPosition']>, isTestMode: boolean) {
