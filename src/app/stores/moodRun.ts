@@ -32,6 +32,8 @@ export const useMoodRunStore = defineStore('moodRun', {
       currentThought: '',
       aiSuggestedMood: null,
       selectedPlan: null,
+      selectedRoute: null,
+      routeDistanceMode: null,
       customPlans: [] as CustomPlan[],
       runData: createInitialRunData(),
       runHistory: loadRunHistory(),

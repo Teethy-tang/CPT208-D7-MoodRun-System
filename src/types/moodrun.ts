@@ -17,6 +17,7 @@ export type PageId =
   | 'moodPage'
   | 'moodAiPage'
   | 'planPage'
+  | 'routeSetupPage'
   | 'customPlanPage'
   | 'runningPage'
   | 'summaryPage'
@@ -35,6 +36,22 @@ export interface CustomPlan {
   name: string;
   distance: string;
   pace: string;
+}
+
+export type RoutePlanSource = 'map' | 'manual' | 'random';
+export type RouteDistanceMode = 'plan' | 'route';
+
+export interface RoutePlanPoint {
+  latitude: number;
+  longitude: number;
+  label: string;
+}
+
+export interface PlannedRoute {
+  start: RoutePlanPoint;
+  end: RoutePlanPoint;
+  distanceKm: number;
+  source: RoutePlanSource;
 }
 
 export interface RunData {
@@ -131,6 +148,8 @@ export interface MoodRunState {
   currentThought: string;
   aiSuggestedMood: MoodId | null;
   selectedPlan: string | null;
+  selectedRoute: PlannedRoute | null;
+  routeDistanceMode: RouteDistanceMode | null;
   customPlans: CustomPlan[];
   runData: RunData;
   runHistory: RunRecord[];

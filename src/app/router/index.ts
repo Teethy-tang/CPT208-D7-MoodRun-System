@@ -13,6 +13,7 @@ export const pageRouteMap: Record<PageId, RouteGroupName> = {
   moodPage: 'mood',
   moodAiPage: 'mood',
   planPage: 'mood',
+  routeSetupPage: 'mood',
   customPlanPage: 'mood',
   runningPage: 'run',
   summaryPage: 'summary',

@@ -22,6 +22,7 @@ import {
   makeRunRecord,
   startRunTracking,
 } from '../features/run-session/runTracker';
+import { createRouteSetupMap, type RouteSetupMapHandle } from '../features/run-session/routeSetupMap';
 import { defaultPageByRoute, pageRouteMap } from './router';
 import { useMoodRunStore } from './stores/moodRun';
 import { loadRunHistory, saveRunHistory } from '../services/storage/runHistory';
@@ -36,9 +37,20 @@ import {
   stopBreathing,
   stopPixelFireworks,
 } from '../services/ui/effects';
-import type { AvatarConfig, MoodId, MoodRunState, PageId, RouteGroupName } from '../types/moodrun';
+import type {
+  AvatarConfig,
+  MoodId,
+  MoodRunState,
+  PageId,
+  PlannedRoute,
+  RouteDistanceMode,
+  RouteGroupName,
+  RoutePlanPoint,
+} from '../types/moodrun';
 
 type MoodRunStore = ReturnType<typeof useMoodRunStore>;
+type RoutePointKind = 'start' | 'end';
+const ROUTE_DISTANCE_WARNING_RATIO = 0.2;
 
 export interface MoodRunController {
   init: () => Promise<void>;
@@ -60,6 +72,14 @@ export interface MoodRunController {
   selectMood: (mood: MoodId) => void;
   updateRecommendedPlan: () => void;
   selectPlan: (planId: string) => void;
+  goToRouteSetup: () => Promise<void>;
+  returnToPlanFromRoute: () => Promise<void>;
+  resetRouteMapPick: () => void;
+  previewManualRoutePoint: (kind: RoutePointKind) => Promise<void>;
+  selectRouteSuggestion: (kind: RoutePointKind, index: number) => Promise<void>;
+  chooseRouteDistanceMode: (mode: RouteDistanceMode) => void;
+  applyManualRoute: () => Promise<void>;
+  generateRandomRoute: () => Promise<void>;
   saveCustomPlan: () => Promise<void>;
   startRun: () => Promise<void>;
   toggleMusic: () => void;
@@ -107,6 +127,9 @@ export function getMoodRunController() {
 function createMoodRunController(store: MoodRunStore, router: Router): MoodRunController {
   const state = store as unknown as MoodRunState;
   let initialized = false;
+  let routeSetupMap: RouteSetupMapHandle | null = null;
+  let routePointSuggestions: Record<RoutePointKind, RoutePlanPoint[]> = { start: [], end: [] };
+  let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
 
   async function init() {
     if (initialized) return;
@@ -281,12 +304,18 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     await showPage('planPage');
     updateRecommendedPlan();
     state.selectedPlan = null;
+    state.selectedRoute = null;
 
     document.querySelectorAll('.plan-item').forEach((item) => item.classList.remove('selected'));
     document.querySelectorAll('.recommended-plan').forEach((item) => item.classList.remove('selected'));
 
     const nextButton = document.getElementById('planNextBtn') as HTMLButtonElement | null;
     if (nextButton) nextButton.disabled = true;
+  }
+
+  async function returnToPlanFromRoute() {
+    await showPage('planPage');
+    updateRecommendedPlan();
   }
 
   async function goToCustomPlan() {
@@ -368,6 +397,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
   function selectPlan(planId: string) {
     state.selectedPlan = planId;
+    state.selectedRoute = null;
+    state.routeDistanceMode = null;
 
     document.querySelectorAll('.plan-item').forEach((item) => item.classList.remove('selected'));
     document.querySelectorAll('.recommended-plan').forEach((item) => item.classList.remove('selected'));
@@ -380,6 +411,275 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     const nextButton = document.getElementById('planNextBtn') as HTMLButtonElement | null;
     if (nextButton) nextButton.disabled = false;
+  }
+
+  async function goToRouteSetup() {
+    if (!state.selectedPlan) {
+      alert('Choose a run plan first.');
+      return;
+    }
+
+    state.selectedRoute = null;
+    state.routeDistanceMode = null;
+    await showPage('routeSetupPage');
+    resetRouteSetupDisplay();
+    await initRouteSetupMap();
+  }
+
+  async function initRouteSetupMap() {
+    const activePlan = getActivePlan(state);
+    if (!routeSetupMap) {
+      routeSetupMap = createRouteSetupMap({
+        targetDistanceKm: activePlan.targetDistance,
+        onRouteChange: handleRouteSelected,
+        onStatus: updateRouteSetupStatus,
+      });
+    }
+
+    routeSetupMap.setTargetDistance(activePlan.targetDistance);
+
+    try {
+      await routeSetupMap.init();
+    } catch (error) {
+      updateRouteSetupStatus('Map could not load. Manual input still needs the map service.');
+      console.warn('Could not initialize route setup map.', error);
+    }
+  }
+
+  function resetRouteSetupDisplay() {
+    setText('routeSetupStatus', 'MAP PICK: choose a start point.');
+    setText('routeStartSummary', 'START --');
+    setText('routeEndSummary', 'FINISH --');
+    setText('routePlanSummary', `PLAN ${getBasePlan().targetDistance.toFixed(2)} KM`);
+    setText('routeDistanceSummary', 'ROUTE -- KM');
+    setText('routeDeltaSummary', 'DIFF -- KM');
+    setText('routeDistanceModeSummary', 'TARGET --');
+    setRouteConflictVisible(false);
+
+    const startInput = document.getElementById('routeStartInput') as HTMLInputElement | null;
+    const endInput = document.getElementById('routeEndInput') as HTMLInputElement | null;
+    const startButton = document.getElementById('routeStartBtn') as HTMLButtonElement | null;
+
+    routePointSuggestions = { start: [], end: [] };
+    routeManualPoints = { start: null, end: null };
+    state.routeDistanceMode = null;
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    if (startButton) startButton.disabled = true;
+    renderRouteSuggestions('start', []);
+    renderRouteSuggestions('end', []);
+  }
+
+  function resetRouteMapPick() {
+    state.selectedRoute = null;
+    state.routeDistanceMode = null;
+    resetRouteSetupDisplay();
+    routeSetupMap?.resetPickMode();
+  }
+
+  async function previewManualRoutePoint(kind: RoutePointKind) {
+    const input = getRouteInput(kind);
+    const value = input?.value.trim() || '';
+
+    state.selectedRoute = null;
+    state.routeDistanceMode = null;
+    routeManualPoints[kind] = null;
+    renderRouteSuggestions(kind, []);
+    setRouteStartEnabled(false);
+
+    if (!value) return;
+
+    try {
+      updateRouteSetupStatus(`Searching ${kind.toUpperCase()}...`);
+      const suggestions = (await routeSetupMap?.searchManualPoint(value)) ?? [];
+      routePointSuggestions[kind] = suggestions;
+
+      if (suggestions.length === 1) {
+        await selectRouteSuggestion(kind, 0);
+        return;
+      }
+
+      renderRouteSuggestions(kind, suggestions);
+      updateRouteSetupStatus(`${suggestions.length} ${kind.toUpperCase()} matches. Pick one.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `Could not find that ${kind} point.`;
+      updateRouteSetupStatus(message);
+    }
+  }
+
+  async function selectRouteSuggestion(kind: RoutePointKind, index: number) {
+    const point = routePointSuggestions[kind][index];
+    if (!point) return;
+
+    routeManualPoints[kind] = point;
+    const input = getRouteInput(kind);
+    if (input) input.value = point.label;
+    renderRouteSuggestions(kind, []);
+
+    await routeSetupMap?.selectManualPoint(kind, point);
+
+    if (!state.selectedRoute) {
+      setText(kind === 'start' ? 'routeStartSummary' : 'routeEndSummary', `${kind === 'start' ? 'START' : 'FINISH'} ${point.label}`);
+      setText('routeDistanceSummary', 'ROUTE -- KM');
+      setText('routeDeltaSummary', 'DIFF -- KM');
+      setText('routeDistanceModeSummary', 'TARGET --');
+      setRouteConflictVisible(false);
+      setRouteStartEnabled(false);
+    }
+  }
+
+  async function applyManualRoute() {
+    const startInput = getRouteInput('start')?.value || '';
+    const endInput = getRouteInput('end')?.value || '';
+
+    try {
+      updateRouteSetupStatus('Checking typed points...');
+
+      if (!routeManualPoints.start) {
+        await previewManualRoutePoint('start');
+      }
+
+      if (!routeManualPoints.end) {
+        await previewManualRoutePoint('end');
+      }
+
+      if (!routeManualPoints.start || !routeManualPoints.end) {
+        updateRouteSetupStatus('Choose one match for START and FINISH.');
+        return;
+      }
+
+      await routeSetupMap?.applyManualRoute(startInput, endInput);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not mark that route.';
+      updateRouteSetupStatus(message);
+    }
+  }
+
+  async function generateRandomRoute() {
+    try {
+      updateRouteSetupStatus('Generating a route near you...');
+      await routeSetupMap?.generateRandomRoute();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not generate a route.';
+      updateRouteSetupStatus(message);
+    }
+  }
+
+  function handleRouteSelected(route: PlannedRoute) {
+    state.selectedRoute = route;
+    state.routeDistanceMode = null;
+    setRouteInputValue('start', route.start.label);
+    setRouteInputValue('end', route.end.label);
+    setText('routeStartSummary', `START ${route.start.label}`);
+    setText('routeEndSummary', `FINISH ${route.end.label}`);
+    updateRouteDistanceDecision(route);
+  }
+
+  function chooseRouteDistanceMode(mode: RouteDistanceMode) {
+    if (!state.selectedRoute) return;
+
+    state.routeDistanceMode = mode;
+    updateRouteDistanceDecision(state.selectedRoute);
+    updateRouteSetupStatus(mode === 'route' ? 'ROUTE DISTANCE WILL BE THE TARGET.' : 'PLAN DISTANCE WILL STAY AS TARGET.');
+  }
+
+  function updateRouteSetupStatus(message: string) {
+    setText('routeSetupStatus', message);
+  }
+
+  function setText(id: string, value: string) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  }
+
+  function getRouteInput(kind: RoutePointKind) {
+    return document.getElementById(kind === 'start' ? 'routeStartInput' : 'routeEndInput') as HTMLInputElement | null;
+  }
+
+  function setRouteInputValue(kind: RoutePointKind, value: string) {
+    const input = getRouteInput(kind);
+    if (input) input.value = value;
+  }
+
+  function setRouteStartEnabled(enabled: boolean) {
+    const startButton = document.getElementById('routeStartBtn') as HTMLButtonElement | null;
+    if (startButton) startButton.disabled = !enabled;
+  }
+
+  function setRouteConflictVisible(visible: boolean) {
+    const panel = document.getElementById('routeDistanceChoice');
+    if (panel) panel.hidden = !visible;
+  }
+
+  function getBasePlan() {
+    return getActivePlan({
+      currentMood: state.currentMood,
+      selectedPlan: state.selectedPlan,
+    });
+  }
+
+  function updateRouteDistanceDecision(route: PlannedRoute) {
+    const plan = getBasePlan();
+    const planDistance = plan.targetDistance;
+    const routeDistance = route.distanceKm;
+    const delta = routeDistance - planDistance;
+    const ratio = planDistance > 0 ? Math.abs(delta) / planDistance : 0;
+    const needsChoice = ratio > ROUTE_DISTANCE_WARNING_RATIO;
+
+    setText('routePlanSummary', `PLAN ${planDistance.toFixed(2)} KM`);
+    setText('routeDistanceSummary', `ROUTE ${routeDistance.toFixed(2)} KM`);
+    setText('routeDeltaSummary', `DIFF ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} KM`);
+    setRouteConflictVisible(needsChoice);
+
+    if (!needsChoice && !state.routeDistanceMode) {
+      state.routeDistanceMode = 'plan';
+    }
+
+    renderRouteDistanceMode();
+    setRouteStartEnabled(!!state.routeDistanceMode);
+
+    updateRouteSetupStatus(
+      needsChoice && !state.routeDistanceMode
+        ? 'ROUTE DISTANCE DIFFERS FROM PLAN. Choose a target mode.'
+        : 'ROUTE READY. Start when you are ready.',
+    );
+  }
+
+  function renderRouteDistanceMode() {
+    const mode = state.routeDistanceMode;
+    const planButton = document.getElementById('routeKeepPlanBtn');
+    const routeButton = document.getElementById('routeUseRouteBtn');
+
+    planButton?.classList.toggle('selected', mode === 'plan');
+    routeButton?.classList.toggle('selected', mode === 'route');
+
+    if (mode === 'route' && state.selectedRoute) {
+      setText('routeDistanceModeSummary', `TARGET ROUTE ${state.selectedRoute.distanceKm.toFixed(2)} KM`);
+      return;
+    }
+
+    if (mode === 'plan') {
+      setText('routeDistanceModeSummary', `TARGET PLAN ${getBasePlan().targetDistance.toFixed(2)} KM`);
+      return;
+    }
+
+    setText('routeDistanceModeSummary', 'TARGET NEEDS CHOICE');
+  }
+
+  function renderRouteSuggestions(kind: RoutePointKind, suggestions: RoutePlanPoint[]) {
+    const element = document.getElementById(kind === 'start' ? 'routeStartSuggestions' : 'routeEndSuggestions');
+    if (!element) return;
+
+    element.innerHTML = suggestions
+      .map(
+        (point, index) => `
+          <button type="button" class="route-suggestion-btn" onclick="app.selectRouteSuggestion('${kind}', ${index})">
+            <span>${escapeHtml(point.label)}</span>
+            <small>${point.longitude.toFixed(5)}, ${point.latitude.toFixed(5)}</small>
+          </button>
+        `,
+      )
+      .join('');
   }
 
   async function saveCustomPlan() {
@@ -398,6 +698,11 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   }
 
   async function startRun() {
+    if (state.selectedRoute && !state.routeDistanceMode) {
+      alert('Choose whether this run should follow the plan distance or route distance.');
+      return;
+    }
+
     if (state.runSession) {
       state.runSession.stop();
     }
@@ -684,6 +989,14 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     selectMood,
     updateRecommendedPlan,
     selectPlan,
+    goToRouteSetup,
+    returnToPlanFromRoute,
+    resetRouteMapPick,
+    previewManualRoutePoint,
+    selectRouteSuggestion,
+    chooseRouteDistanceMode,
+    applyManualRoute,
+    generateRandomRoute,
     saveCustomPlan,
     startRun,
     toggleMusic,

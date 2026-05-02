@@ -1,4 +1,4 @@
-import type { PositionLike, TrackingResult } from '../../types/moodrun';
+import type { PlannedRoute, PositionLike, TrackingResult } from '../../types/moodrun';
 import { wgs84ToGcj02 } from './coordTransform';
 
 declare global {
@@ -28,11 +28,15 @@ let amapPromise: Promise<any> | null = null;
 export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMessage') {
   let map: any = null;
   let polyline: any = null;
+  let plannedPolyline: any = null;
+  let plannedStartMarker: any = null;
+  let plannedEndMarker: any = null;
   let startMarker: any = null;
   let currentMarker: any = null;
   let accuracyCircle: any = null;
   let initPromise: Promise<void> | null = null;
   let routePath: LngLatTuple[] = [];
+  let plannedRoutePath: LngLatTuple[] = [];
   let previewPosition: LngLatTuple | null = null;
   let lastAcceptedPosition: LngLatTuple | null = null;
   let currentAccuracy: number | null = null;
@@ -45,9 +49,10 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     render();
   };
 
-  async function reset() {
+  async function reset(plannedRoute: PlannedRoute | null = null) {
     destroyed = false;
     routePath = [];
+    plannedRoutePath = plannedRoute ? [toLngLatTuple(plannedRoute.start), toLngLatTuple(plannedRoute.end)] : [];
     previewPosition = null;
     lastAcceptedPosition = null;
     currentAccuracy = null;
@@ -89,6 +94,9 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
       map = null;
     }
     polyline = null;
+    plannedPolyline = null;
+    plannedStartMarker = null;
+    plannedEndMarker = null;
     startMarker = null;
     currentMarker = null;
     accuracyCircle = null;
@@ -140,6 +148,29 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
           showDir: true,
         });
 
+        plannedPolyline = new AMap.Polyline({
+          strokeColor: '#79e1d6',
+          strokeWeight: 6,
+          strokeOpacity: 0.88,
+          strokeStyle: 'solid',
+          lineJoin: 'round',
+          lineCap: 'round',
+          showDir: true,
+          zIndex: 105,
+        });
+
+        plannedStartMarker = new AMap.Marker({
+          content: '<div class="run-map-planned-pin run-map-planned-start">S</div>',
+          offset: new AMap.Pixel(-12, -12),
+          zIndex: 112,
+        });
+
+        plannedEndMarker = new AMap.Marker({
+          content: '<div class="run-map-planned-pin run-map-planned-end">E</div>',
+          offset: new AMap.Pixel(-12, -12),
+          zIndex: 113,
+        });
+
         startMarker = new AMap.Marker({
           content: '<div class="run-map-start-pin" aria-hidden="true"></div>',
           offset: new AMap.Pixel(-6, -6),
@@ -163,7 +194,7 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
           zIndex: 90,
         });
 
-        map.add([polyline, startMarker, currentMarker, accuracyCircle]);
+        map.add([plannedPolyline, plannedStartMarker, plannedEndMarker, polyline, startMarker, currentMarker, accuracyCircle]);
         window.addEventListener('moodrun:map-resize', handleMapResize);
         setMessage('');
       })();
@@ -173,9 +204,14 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   }
 
   function clearOverlays() {
-    if (!polyline || !startMarker || !currentMarker || !accuracyCircle) return;
+    if (!polyline || !plannedPolyline || !plannedStartMarker || !plannedEndMarker || !startMarker || !currentMarker || !accuracyCircle) {
+      return;
+    }
 
     polyline.hide();
+    plannedPolyline.hide();
+    plannedStartMarker.hide();
+    plannedEndMarker.hide();
     startMarker.hide();
     currentMarker.hide();
     accuracyCircle.hide();
@@ -186,11 +222,22 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   }
 
   function render() {
-    if (!map || !polyline || !startMarker || !currentMarker || !accuracyCircle || destroyed) {
+    if (
+      !map ||
+      !polyline ||
+      !plannedPolyline ||
+      !plannedStartMarker ||
+      !plannedEndMarker ||
+      !startMarker ||
+      !currentMarker ||
+      !accuracyCircle ||
+      destroyed
+    ) {
       return;
     }
 
     const focusPosition = lastAcceptedPosition ?? previewPosition;
+    const plannedOverlays = renderPlannedRoute();
 
     if (routePath.length > 1) {
       polyline.setPath(routePath);
@@ -226,7 +273,9 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     }
 
     if (routePath.length > 1) {
-      map.setFitView([polyline, startMarker, currentMarker], false, [28, 28, 28, 28], 17);
+      map.setFitView([polyline, startMarker, currentMarker].concat(plannedOverlays), false, [28, 28, 28, 28], 17);
+    } else if (plannedOverlays.length) {
+      map.setFitView(plannedOverlays.concat(focusPosition ? [currentMarker] : []), false, [28, 28, 28, 28], 17);
     } else if (focusPosition) {
       map.setZoomAndCenter(DEFAULT_ZOOM, focusPosition);
     } else {
@@ -234,6 +283,24 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     }
 
     pendingViewportSync = false;
+  }
+
+  function renderPlannedRoute() {
+    if (!plannedPolyline || !plannedStartMarker || !plannedEndMarker || plannedRoutePath.length < 2) {
+      plannedPolyline?.hide();
+      plannedStartMarker?.hide();
+      plannedEndMarker?.hide();
+      return [];
+    }
+
+    plannedPolyline.setPath(plannedRoutePath);
+    plannedStartMarker.setPosition(plannedRoutePath[0]);
+    plannedEndMarker.setPosition(plannedRoutePath[plannedRoutePath.length - 1]);
+    plannedPolyline.show();
+    plannedStartMarker.show();
+    plannedEndMarker.show();
+
+    return [plannedPolyline, plannedStartMarker, plannedEndMarker];
   }
 
   function reportMapError(error: unknown) {
@@ -261,7 +328,11 @@ function toGcjLngLat(position: PositionLike): LngLatTuple {
   return [converted.longitude, converted.latitude];
 }
 
-async function loadAMap() {
+function toLngLatTuple(point: PlannedRoute['start']): LngLatTuple {
+  return [point.longitude, point.latitude];
+}
+
+export async function loadAMap() {
   if (window.AMap) {
     return window.AMap;
   }

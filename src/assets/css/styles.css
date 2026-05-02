@@ -1358,6 +1358,27 @@
             }
         }
 
+        .run-map-planned-pin {
+            display: grid;
+            place-items: center;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ffffff;
+            border-radius: 999px;
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            box-shadow: 0 4px 12px rgba(27, 35, 64, 0.24);
+        }
+
+        .run-map-planned-start {
+            background: var(--secondary);
+        }
+
+        .run-map-planned-end {
+            background: var(--accent);
+        }
+
         .running-title {
             font-family: var(--font-pixel);
             font-size: 14px;
@@ -2459,6 +2480,235 @@
             color: var(--text-main);
         }
 
+        .route-setup-page .page-title {
+            font-family: var(--font-pixel);
+            font-size: 16px;
+            color: var(--accent);
+            text-shadow: 3px 3px 0px var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .route-setup-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+            gap: 18px;
+            flex: 1 1 auto;
+            min-height: 0;
+            margin-bottom: 20px;
+        }
+
+        .route-map-card,
+        .route-control-card {
+            background: rgba(255, 255, 255, 0.84);
+            border: 3px solid var(--secondary);
+            box-shadow: 5px 5px 0px #46a19a, 2px 2px 0px #ffffff;
+            position: relative;
+        }
+
+        .route-map-card {
+            min-height: 430px;
+            overflow: hidden;
+        }
+
+        .route-setup-map {
+            position: absolute;
+            inset: 0;
+        }
+
+        .route-map-hint {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            z-index: 12;
+            max-width: calc(100% - 24px);
+            border: 2px solid rgba(27, 35, 64, 0.34);
+            background: rgba(253, 251, 246, 0.9);
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            line-height: 1.5;
+            padding: 8px 10px;
+            box-shadow: 3px 3px 0 rgba(27, 35, 64, 0.16);
+        }
+
+        .route-control-card {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 18px;
+        }
+
+        .route-choice-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .route-choice-btn,
+        .route-mark-btn {
+            border: 3px solid var(--secondary);
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            padding: 12px 10px;
+            box-shadow: 3px 3px 0 #46a19a;
+            transition: all 0.18s ease;
+        }
+
+        .route-choice-btn:hover,
+        .route-mark-btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: inset 3px 3px 0 #46a19a, inset 1px 1px 0 #ffffff;
+        }
+
+        .route-manual-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .route-manual-form label {
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            color: var(--text-muted);
+        }
+
+        .route-manual-form input {
+            border: 3px solid var(--primary);
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            font-size: 18px;
+            min-height: 46px;
+            outline: none;
+            padding: 10px 12px;
+        }
+
+        .route-manual-form input:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(121, 225, 214, 0.24);
+        }
+
+        .route-suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 132px;
+            overflow-y: auto;
+        }
+
+        .route-suggestion-btn {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            border: 2px solid rgba(27, 35, 64, 0.28);
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: var(--font-pixel);
+            font-size: 7px;
+            line-height: 1.45;
+            padding: 8px 9px;
+            text-align: left;
+            transition: all 0.18s ease;
+        }
+
+        .route-suggestion-btn small {
+            color: var(--text-muted);
+            font-family: var(--font-body);
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .route-suggestion-btn:hover {
+            border-color: var(--secondary);
+            transform: translateX(2px);
+            box-shadow: 2px 2px 0 rgba(70, 161, 154, 0.5);
+        }
+
+        .route-mark-btn {
+            margin-top: 4px;
+            border-color: var(--accent);
+            color: #a76100;
+            box-shadow: 3px 3px 0 rgba(255, 216, 77, 0.72);
+        }
+
+        .route-summary-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+            border: 2px dashed var(--accent);
+            background: rgba(255, 247, 164, 0.24);
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            line-height: 1.7;
+            padding: 14px;
+        }
+
+        .route-distance-choice {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .route-distance-choice[hidden] {
+            display: none;
+        }
+
+        .route-distance-choice button {
+            border: 2px solid var(--primary);
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: var(--font-pixel);
+            font-size: 7px;
+            line-height: 1.4;
+            padding: 9px 10px;
+            text-align: left;
+            transition: all 0.18s ease;
+        }
+
+        .route-distance-choice button:hover,
+        .route-distance-choice button.selected {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 3px 3px 0 rgba(249, 147, 190, 0.55);
+            transform: translate(1px, 1px);
+        }
+
+        .route-setup-pin {
+            display: grid;
+            place-items: center;
+            width: 26px;
+            height: 26px;
+            border: 2px solid #ffffff;
+            border-radius: 999px 999px 999px 0;
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            font-size: 8px;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 12px rgba(27, 35, 64, 0.2);
+        }
+
+        .route-setup-pin span {
+            transform: rotate(45deg);
+        }
+
+        .route-setup-pin-start {
+            background: var(--secondary);
+        }
+
+        .route-setup-pin-end {
+            background: var(--accent);
+        }
+
         .running-page {
             background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-subtle) 100%);
             padding-bottom: 28px;
@@ -3131,6 +3381,31 @@
 
             .running-title {
                 font-size: 12px;
+            }
+
+            .route-setup-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                flex: 0 0 auto;
+            }
+
+            .route-map-card {
+                min-height: 330px;
+            }
+
+            .route-control-card {
+                padding: 14px;
+            }
+
+            .route-choice-btn,
+            .route-mark-btn {
+                font-size: 7px;
+                padding: 10px 8px;
+            }
+
+            .route-manual-form input {
+                font-size: 16px;
+                min-height: 42px;
             }
 
             .map-stage {

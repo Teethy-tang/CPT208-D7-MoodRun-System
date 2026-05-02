@@ -196,7 +196,62 @@ const app = getMoodRunController();
     <button class="create-own-btn" @click="app.goToCustomPlan()">CREATE YOUR OWN!</button>
     <div class="page-actions">
       <button class="back-btn" @click="app.goToMood()">BACK</button>
-      <button class="retro-btn" id="planNextBtn" disabled @click="app.startRun()">START RUN</button>
+      <button class="retro-btn" id="planNextBtn" disabled @click="app.goToRouteSetup()">SET ROUTE</button>
+    </div>
+  </div>
+
+  <div class="page route-setup-page" id="routeSetupPage">
+    <h2 class="page-title">SET YOUR ROUTE</h2>
+    <div class="route-setup-grid">
+      <section class="route-map-card">
+        <div class="route-setup-map" id="routeSetupMap" aria-label="Route setup map"></div>
+        <div class="route-map-hint" id="routeSetupStatus" aria-live="polite">MAP PICK: choose a start point.</div>
+      </section>
+      <section class="route-control-card">
+        <div class="route-choice-row">
+          <button class="route-choice-btn" type="button" @click="app.resetRouteMapPick()">MAP PICK</button>
+          <button class="route-choice-btn" type="button" @click="app.generateRandomRoute()">RANDOM</button>
+        </div>
+        <div class="route-manual-form">
+          <label for="routeStartInput">START</label>
+          <input
+            id="routeStartInput"
+            type="text"
+            placeholder="Address or lng,lat"
+            @change="app.previewManualRoutePoint('start')"
+          />
+          <div class="route-suggestions" id="routeStartSuggestions"></div>
+          <label for="routeEndInput">FINISH</label>
+          <input
+            id="routeEndInput"
+            type="text"
+            placeholder="Address or lng,lat"
+            @change="app.previewManualRoutePoint('end')"
+          />
+          <div class="route-suggestions" id="routeEndSuggestions"></div>
+          <button class="route-mark-btn" type="button" @click="app.applyManualRoute()">MARK ROUTE</button>
+        </div>
+        <div class="route-summary-panel">
+          <div id="routeStartSummary">START --</div>
+          <div id="routeEndSummary">FINISH --</div>
+          <div id="routePlanSummary">PLAN -- KM</div>
+          <div id="routeDistanceSummary">ROUTE -- KM</div>
+          <div id="routeDeltaSummary">DIFF -- KM</div>
+          <div id="routeDistanceModeSummary">TARGET --</div>
+          <div class="route-distance-choice" id="routeDistanceChoice" hidden>
+            <button id="routeUseRouteBtn" type="button" @click="app.chooseRouteDistanceMode('route')">
+              USE ROUTE DISTANCE
+            </button>
+            <button id="routeKeepPlanBtn" type="button" @click="app.chooseRouteDistanceMode('plan')">
+              KEEP PLAN TARGET
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="page-actions">
+      <button class="back-btn" @click="app.returnToPlanFromRoute()">BACK</button>
+      <button class="retro-btn" id="routeStartBtn" disabled @click="app.startRun()">START RUN</button>
     </div>
   </div>
 

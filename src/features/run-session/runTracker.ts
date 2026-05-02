@@ -20,7 +20,7 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
 
   resetRunDisplay(plan);
   updateRunStatus('Requesting GPS access...', 'info');
-  void liveMap.reset();
+  void liveMap.reset(state.selectedRoute);
 
   const syncFromSnapshot = (snapshot: ReturnType<typeof metrics.tick>) => {
     const livePace = snapshot.currentPace ?? snapshot.averagePace;
@@ -151,12 +151,26 @@ export function formatTime(seconds: number) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
-export function getActivePlan(state: Pick<MoodRunState, 'currentMood' | 'selectedPlan'>) {
-  if (state.selectedPlan === 'recommended') {
-    return moodPlans[state.currentMood || 'neutral'];
+export function getActivePlan(
+  state: Pick<MoodRunState, 'currentMood' | 'selectedPlan'> &
+    Partial<Pick<MoodRunState, 'selectedRoute' | 'routeDistanceMode'>>,
+) {
+  const basePlan =
+    state.selectedPlan === 'recommended'
+      ? moodPlans[state.currentMood || 'neutral']
+      : runPlanOptions[state.selectedPlan as keyof typeof runPlanOptions] || moodPlans[state.currentMood || 'neutral'];
+
+  if (state.routeDistanceMode === 'route' && state.selectedRoute?.distanceKm) {
+    const routeDistance = Math.max(0.1, state.selectedRoute.distanceKm);
+    return {
+      ...basePlan,
+      name: `${basePlan.name} ROUTE`,
+      dist: `${routeDistance.toFixed(2)}KM`,
+      targetDistance: routeDistance,
+    };
   }
 
-  return runPlanOptions[state.selectedPlan as keyof typeof runPlanOptions] || moodPlans[state.currentMood || 'neutral'];
+  return basePlan;
 }
 
 function resetRunDisplay(plan: ReturnType<typeof getActivePlan>) {
