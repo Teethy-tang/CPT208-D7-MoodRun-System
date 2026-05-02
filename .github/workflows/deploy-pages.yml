@@ -36,6 +36,9 @@ jobs:
         run: npm ci
 
       - name: Build app
+        env:
+          VITE_AMAP_KEY: ${{ secrets.VITE_AMAP_KEY }}
+          VITE_AMAP_SECURITY_CODE: ${{ secrets.VITE_AMAP_SECURITY_CODE }}
         run: npm run build
 
       - name: Upload Pages artifact
