@@ -2,12 +2,17 @@ import { moodCheckpoints, moodPlans, runPlanOptions } from '../mood-engine/data'
 import { createLocationService } from './locationService';
 import { createRunMap } from './runMap';
 import { createRunMetrics } from './metricsEngine';
-import type { MoodRunState, RunRecord, RunSessionHandle } from '../../types/moodrun';
+import { wgs84ToGcj02 } from './coordTransform';
+import type { MoodRunState, PlannedRoute, PositionLike, RoutePlanPoint, RunRecord, RunSessionHandle } from '../../types/moodrun';
 
 interface TrackingCallbacks {
   onCheckpoint: (text: string) => void;
   onComplete: () => void;
 }
+
+const START_DISTANCE_WARNING_METERS = 300;
+const OFF_ROUTE_WARNING_METERS = 120;
+const BACK_ON_ROUTE_METERS = 80;
 
 export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete }: TrackingCallbacks): RunSessionHandle {
   const plan = getActivePlan(state);
@@ -63,6 +68,7 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
         reason: result.reason,
         accuracy: result.snapshot.currentAccuracy,
       });
+      updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
       updateTrackingFeedback(result, state.runTestMode);
       syncFromSnapshot(result.snapshot);
     },
@@ -182,6 +188,7 @@ function resetRunDisplay(plan: ReturnType<typeof getActivePlan>) {
   setText('remainingDistanceDisplay', `${plan.targetDistance.toFixed(2)} KM LEFT`);
   setText('routePointCount', '0 PTS');
   setText('gpsQualityLabel', 'SEARCHING');
+  resetRouteGuidance();
   setWidth('progressFill', '0%');
   setText('progressPercent', '0%');
   setText('runTargetLabel', `TARGET ${plan.dist}`);
@@ -217,6 +224,53 @@ function updateRunDisplay(runData: MoodRunState['runData'], plan: ReturnType<typ
 
 function updateRunStatus(_message: string, _tone = 'info') {
   // Kept as a callback bridge for the tracker while the visible GPS status bar is hidden.
+}
+
+function resetRouteGuidance() {
+  const pill = document.getElementById('routeGuidancePill') as HTMLElement | null;
+  if (pill) pill.hidden = true;
+}
+
+function updateRouteGuidance(route: PlannedRoute | null, position: PositionLike, routePointCount: number) {
+  if (!route) {
+    resetRouteGuidance();
+    return;
+  }
+
+  const current = toGcjPoint(position);
+  const startDistance = haversineDistanceMeters(current, route.start);
+  const routeDistance = distanceToRouteMeters(current, route);
+
+  if (routePointCount <= 1 && startDistance > START_DISTANCE_WARNING_METERS) {
+    setRouteGuidance(
+      'START POINT AWAY',
+      `${formatMeters(startDistance)} to route start. Head there, or begin from here.`,
+      'warning',
+    );
+    return;
+  }
+
+  if (routeDistance > OFF_ROUTE_WARNING_METERS) {
+    setRouteGuidance('OFF ROUTE', `${formatMeters(routeDistance)} from recommended route. Free run continues.`, 'offroute');
+    return;
+  }
+
+  if (routeDistance <= BACK_ON_ROUTE_METERS) {
+    resetRouteGuidance();
+    return;
+  }
+
+  resetRouteGuidance();
+}
+
+function setRouteGuidance(title: string, detail: string, tone: string) {
+  const pill = document.getElementById('routeGuidancePill') as HTMLElement | null;
+  if (!pill) return;
+
+  pill.hidden = false;
+  pill.dataset.tone = tone;
+  setText('routeGuidanceTitle', title);
+  setText('routeGuidanceDetail', detail);
 }
 
 function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMetrics>['addPosition']>, isTestMode: boolean) {
@@ -278,6 +332,65 @@ function updatePaceZone(pace: number | null) {
   } else {
     document.getElementById('zoneAerobic')?.classList.add('active');
   }
+}
+
+function toGcjPoint(position: PositionLike): RoutePlanPoint {
+  const converted = wgs84ToGcj02(position.coords.latitude, position.coords.longitude);
+  return {
+    latitude: converted.latitude,
+    longitude: converted.longitude,
+    label: 'Current position',
+  };
+}
+
+function distanceToRouteMeters(point: RoutePlanPoint, route: PlannedRoute) {
+  const start = projectToLocalMeters(route.start, route.start);
+  const end = projectToLocalMeters(route.end, route.start);
+  const current = projectToLocalMeters(point, route.start);
+  const segmentX = end.x - start.x;
+  const segmentY = end.y - start.y;
+  const segmentLengthSq = segmentX * segmentX + segmentY * segmentY;
+
+  if (segmentLengthSq <= 0) {
+    return haversineDistanceMeters(point, route.start);
+  }
+
+  const t = Math.max(0, Math.min(1, ((current.x - start.x) * segmentX + (current.y - start.y) * segmentY) / segmentLengthSq));
+  const nearestX = start.x + t * segmentX;
+  const nearestY = start.y + t * segmentY;
+  const dx = current.x - nearestX;
+  const dy = current.y - nearestY;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function projectToLocalMeters(point: RoutePlanPoint, reference: RoutePlanPoint) {
+  const meanLat = toRadians((point.latitude + reference.latitude) / 2);
+  return {
+    x: (point.longitude - reference.longitude) * 111320 * Math.cos(meanLat),
+    y: (point.latitude - reference.latitude) * 110540,
+  };
+}
+
+function haversineDistanceMeters(pointA: RoutePlanPoint, pointB: RoutePlanPoint) {
+  const earthRadiusMeters = 6371000;
+  const lat1 = toRadians(pointA.latitude);
+  const lat2 = toRadians(pointB.latitude);
+  const deltaLat = lat2 - lat1;
+  const deltaLon = toRadians(pointB.longitude - pointA.longitude);
+  const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusMeters * c;
+}
+
+function formatMeters(value: number) {
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}KM`;
+  return `${Math.round(value)}M`;
+}
+
+function toRadians(value: number) {
+  return (value * Math.PI) / 180;
 }
 
 function setText(id: string, value: string) {

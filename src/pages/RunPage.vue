@@ -34,6 +34,10 @@ async function toggleMapExpansion() {
           <span id="routePointCount">0 PTS</span>
           <span id="gpsQualityLabel">SEARCHING</span>
         </div>
+        <div class="route-guidance-pill" id="routeGuidancePill" data-tone="info" hidden>
+          <span id="routeGuidanceTitle">ROUTE GUIDE</span>
+          <span id="routeGuidanceDetail">Recommended route active.</span>
+        </div>
         <button
           class="map-expand-toggle"
           type="button"
