@@ -33,6 +33,7 @@ export function createRouteSetupMap({
 }: RouteSetupMapOptions = {}): RouteSetupMapHandle {
   let AMap: any = null;
   let map: any = null;
+  let currentLocationMarker: any = null;
   let startMarker: any = null;
   let endMarker: any = null;
   let routeLine: any = null;
@@ -55,6 +56,12 @@ export function createRouteSetupMap({
         resizeEnable: true,
         dragEnable: true,
         zoomEnable: true,
+      });
+
+      currentLocationMarker = new AMap.Marker({
+        content: '<div class="route-current-marker"><span></span></div>',
+        offset: new AMap.Pixel(-13, -13),
+        zIndex: 130,
       });
 
       startMarker = new AMap.Marker({
@@ -80,7 +87,7 @@ export function createRouteSetupMap({
         zIndex: 110,
       });
 
-      map.add([routeLine, startMarker, endMarker]);
+      map.add([routeLine, currentLocationMarker, startMarker, endMarker]);
       map.on('click', handleMapClick);
     }
 
@@ -318,7 +325,16 @@ export function createRouteSetupMap({
   async function centerOnCurrentLocation() {
     const point = await getCurrentMapPoint();
     map.setZoomAndCenter(15, toLngLatTuple(point));
-    setStatus(point === DEFAULT_CENTER ? 'Using default area. Choose a start point.' : 'Centered near you. Choose a start point.');
+
+    if (point === DEFAULT_CENTER) {
+      currentLocationMarker?.hide();
+      setStatus('Using default area. Choose a start point.');
+      return;
+    }
+
+    currentLocationMarker?.setPosition(toLngLatTuple(point));
+    currentLocationMarker?.show();
+    setStatus('Centered near you. Choose a start point.');
   }
 
   function setStatus(message: string) {

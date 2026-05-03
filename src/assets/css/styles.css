@@ -2709,6 +2709,35 @@
             background: var(--accent);
         }
 
+        .route-current-marker {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: rgba(121, 225, 214, 0.28);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 4px rgba(121, 225, 214, 0.22);
+        }
+
+        .route-current-marker span {
+            width: 10px;
+            height: 10px;
+            border-radius: inherit;
+            background: var(--secondary);
+            box-shadow: 0 0 10px rgba(0, 120, 111, 0.45);
+        }
+
+        .route-current-marker::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: inherit;
+            border: 2px solid rgba(121, 225, 214, 0.48);
+            animation: mapPulse 1.5s ease-out infinite;
+        }
+
         .running-page {
             background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-subtle) 100%);
             padding-bottom: 28px;
