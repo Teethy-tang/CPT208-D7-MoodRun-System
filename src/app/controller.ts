@@ -784,8 +784,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     runningMusic.stop();
 
     const activePlan = getActivePlan(state);
-    await showPage('runningPage');
-
     state.runData = {
       distance: 0,
       pace: 0,
@@ -805,11 +803,21 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     state.musicEnabled = true;
     state.runSaved = false;
     state.lastMoodShift = moodOutcomes[state.currentMood || 'neutral'];
+    const runMusicStart = runningMusic.playForPlan(activePlan, { restart: true });
+
+    await showPage('runningPage');
 
     renderMusicToggle();
     renderVoiceToggle();
     renderVoiceControlToggle();
-    startRunMusic(activePlan);
+    void runMusicStart.then((isPlaying) => {
+      state.musicEnabled = isPlaying;
+      renderMusicToggle();
+
+      if (!isPlaying) {
+        console.warn('Running music could not start for this session.');
+      }
+    });
 
     stopRunConfirmationExpiresAt = 0;
     voiceAssistant.resetMemory();
@@ -897,17 +905,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       renderMusicToggle();
     });
     renderMusicToggle();
-  }
-
-  function startRunMusic(activePlan: ReturnType<typeof getActivePlan>) {
-    void runningMusic.playForPlan(activePlan, { restart: true }).then((isPlaying) => {
-      state.musicEnabled = isPlaying;
-      renderMusicToggle();
-
-      if (!isPlaying) {
-        console.warn('Running music could not start for this session.');
-      }
-    });
   }
 
   function renderMusicToggle() {

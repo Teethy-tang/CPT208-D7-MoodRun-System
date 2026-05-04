@@ -4,19 +4,21 @@ interface RunningMusicPlan {
   paceRange: number[];
 }
 
+const audioPath = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 const runningPlaylists: Record<RunningPlaylist, string[]> = {
   fast: [
-    '/audio/running/playlists/fast/kontraa-hype-drill-music-438398.mp3',
-    '/audio/running/playlists/fast/prettyjohn1-no-copyright-music-498106.mp3',
-    '/audio/running/playlists/fast/studiokolomna-background-music-483818.mp3',
+    audioPath('audio/running/playlists/fast/kontraa-hype-drill-music-438398.mp3'),
+    audioPath('audio/running/playlists/fast/prettyjohn1-no-copyright-music-498106.mp3'),
+    audioPath('audio/running/playlists/fast/studiokolomna-background-music-483818.mp3'),
   ],
   mixed: [
-    '/audio/running/playlists/mixed/loksii-no-copyright-music-211881.mp3',
-    '/audio/running/playlists/mixed/sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3',
+    audioPath('audio/running/playlists/mixed/loksii-no-copyright-music-211881.mp3'),
+    audioPath('audio/running/playlists/mixed/sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3'),
   ],
   slow: [
-    '/audio/running/playlists/slow/music_for_video-just-relax-11157.mp3',
-    '/audio/running/playlists/slow/prettyjohn1-background-music-505061.mp3',
+    audioPath('audio/running/playlists/slow/music_for_video-just-relax-11157.mp3'),
+    audioPath('audio/running/playlists/slow/prettyjohn1-background-music-505061.mp3'),
   ],
 };
 

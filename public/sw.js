@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moodrun-app-shell-v1';
+const CACHE_NAME = 'moodrun-app-shell-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -28,6 +28,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.includes('/audio/') || request.headers.has('range')) return;
 
   event.respondWith(
     fetch(request)

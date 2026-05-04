@@ -1,10 +1,12 @@
 import type { MeditationSound } from '../../types/moodrun';
 
+const audioPath = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 const meditationTrackUrls: Record<MeditationSound, string> = {
-  rain: '/audio/meditation/rain.mp3',
-  ocean: '/audio/meditation/ocean.mp3',
-  forest: '/audio/meditation/forest.mp3',
-  wind: '/audio/meditation/wind.mp3',
+  rain: audioPath('audio/meditation/rain.mp3'),
+  ocean: audioPath('audio/meditation/ocean.mp3'),
+  forest: audioPath('audio/meditation/forest.mp3'),
+  wind: audioPath('audio/meditation/wind.mp3'),
 };
 
 const FADE_STEP_MS = 30;
