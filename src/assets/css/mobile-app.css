@@ -988,7 +988,7 @@ button,
   }
 
   .slogan-main {
-    font-size: clamp(34px, 14vh, 60px);
+    font-size: clamp(38px, 12vw, 58px);
   }
 
   .home-action-btn {
