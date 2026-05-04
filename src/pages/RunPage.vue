@@ -29,6 +29,10 @@ async function toggleMapExpansion() {
         <span class="voice-icon" aria-hidden="true">)))</span>
         <span>ON</span>
       </button>
+      <button class="voice-control-toggle" id="voiceControlToggle" type="button" @click="app.toggleVoiceControl()">
+        <span class="voice-control-icon" aria-hidden="true">MIC</span>
+        <span>OFF</span>
+      </button>
     </div>
     <div class="map-stage" :class="{ 'map-stage-expanded': isMapExpanded }">
       <div class="map-container" :class="{ 'map-container-expanded': isMapExpanded }">

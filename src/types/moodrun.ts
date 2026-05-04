@@ -82,6 +82,7 @@ export interface RunRecord {
   calories: number;
   plan: string | null;
   planName: string | null;
+  voiceControlEnabled?: boolean;
   voiceEnabled?: boolean;
   moodAfter?: string;
   moodInsight?: string;
@@ -130,6 +131,7 @@ export interface TrackingResult {
 
 export interface AvatarConfig {
   body: string;
+  backgroundColor: string;
   bodyColor: string;
   shadowColor: string;
   eyes: string;
@@ -157,6 +159,7 @@ export interface MoodRunState {
   lastMoodShift: MoodOutcome | null;
   avatar: AvatarConfig;
   avatarDraft: AvatarConfig;
+  voiceControlEnabled: boolean;
   musicEnabled: boolean;
   voiceEnabled: boolean;
   runTestMode: boolean;

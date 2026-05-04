@@ -4,6 +4,7 @@ const AVATAR_KEY = 'moodrun_avatar';
 
 export const avatarOptions = {
   body: ['round', 'block', 'wide'],
+  backgroundColor: ['#1b2340', '#fdfbf7', '#79e1d6', '#f993be', '#ffeb53', '#c9d6ff'],
   bodyColor: ['#5b4fcf', '#79e1d6', '#f993be', '#ffeb53', '#4f7eff'],
   shadowColor: ['#f993be', '#7b5ff1', '#1b2340', '#00b9aa', '#ff8bc5'],
   eyes: ['dot', 'sleepy', 'spark'],
@@ -15,6 +16,7 @@ export const avatarOptions = {
 
 export const defaultAvatar: AvatarConfig = {
   body: 'round',
+  backgroundColor: '#1b2340',
   bodyColor: '#5b4fcf',
   shadowColor: '#f993be',
   eyes: 'dot',
@@ -26,6 +28,14 @@ export const defaultAvatar: AvatarConfig = {
 
 const optionLabels: Record<keyof AvatarConfig, Record<string, string>> = {
   body: { round: 'ROUND', block: 'BLOCK', wide: 'WIDE' },
+  backgroundColor: {
+    '#1b2340': 'INK',
+    '#fdfbf7': 'PAPER',
+    '#79e1d6': 'CYAN',
+    '#f993be': 'PINK',
+    '#ffeb53': 'SUN',
+    '#c9d6ff': 'SKY',
+  },
   bodyColor: {
     '#5b4fcf': 'VIOLET',
     '#79e1d6': 'CYAN',
@@ -84,7 +94,7 @@ export function randomAvatar(): AvatarConfig {
   ) as unknown as AvatarConfig;
 }
 
-export function createAvatarSvg(avatar: Partial<AvatarConfig>, className = 'pixel-avatar') {
+export function createAvatarSvg(avatar: Partial<AvatarConfig>, className = 'pixel-avatar', showBackground = false) {
   const config = normalizeAvatar(avatar);
   const body = getBodyRects(config);
   const arms = getArmRects(config);
@@ -95,6 +105,7 @@ export function createAvatarSvg(avatar: Partial<AvatarConfig>, className = 'pixe
 
   return `
         <svg class="${className}" viewBox="0 0 48 48" role="img" aria-label="Custom pixel avatar">
+            ${showBackground ? `<rect x="0" y="0" width="48" height="48" fill="${config.backgroundColor}"/>` : ''}
             ${rects(antenna.back, config.shadowColor)}
             ${rects(arms.shadow, config.shadowColor)}
             ${rects(feet.shadow, config.shadowColor)}

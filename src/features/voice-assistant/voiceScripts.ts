@@ -1,4 +1,5 @@
-import type { MoodId } from '../../types/moodrun';
+import type { MoodId, RunData } from '../../types/moodrun';
+import type { EmotionalRunCue, EmotionalRunState } from '../run-session/emotionalStateEngine';
 
 interface RunStartVoiceOptions {
   mood: MoodId;
@@ -27,6 +28,16 @@ interface VoiceStyle {
   pitch: number;
   rate: number;
   volume: number;
+}
+
+interface RunCommandVoiceOptions {
+  mood: MoodId;
+  runData: RunData;
+}
+
+interface EmotionalCueVoiceOptions {
+  cue: EmotionalRunCue;
+  mood: MoodId;
 }
 
 const moodVoiceStyles: Record<MoodId, VoiceStyle> = {
@@ -173,6 +184,243 @@ const metricMoodClosers: Record<MoodId, string[]> = {
   neutral: ['Stay balanced.', 'Let the steady rhythm do its quiet work.'],
 };
 
+const emotionalCueVoiceLines: Record<MoodId, Record<EmotionalRunState, string[]>> = {
+  stressed: {
+    fading: [
+      'The pace is dipping, and that is okay. Release the hands first, then choose one steady minute.',
+      'If the pressure is heavy, make the next thirty seconds simple: breathe out, step forward.',
+    ],
+    paused: [
+      'You have paused. Use this moment to unclench your jaw and come back gently.',
+      'Stillness counts too. Let the shoulders drop before you move again.',
+    ],
+    recovered: [
+      'You found the rhythm again. Let that be enough for now.',
+      'Good reset. Keep the effort clean, not clenched.',
+    ],
+    rerouting: [
+      'The route is messy, but the run is still yours. Slow the decision down and choose the safe line.',
+      'You are off the route again. No rush. Reorient first, then keep moving.',
+    ],
+    rushing: [
+      'You may be pushing the pressure through your legs. Ease back slightly and soften the breath.',
+      'A little rush is showing up. Let the next few steps be less clenched.',
+    ],
+    settled: [
+      'This rhythm is working. Say less, carry less, keep going.',
+      'You have found a steadier lane. Stay here and let the pressure thin out.',
+    ],
+  },
+  anxious: {
+    fading: [
+      'The pace is dropping a little. No alarm. Make the next step smaller, then the next one.',
+      'If worry is pulling at you, come back to one breath and one step.',
+    ],
+    paused: [
+      'You have paused. That is fine. Feel both feet, look around, and restart only when it feels safe.',
+      'Still moment. Let the breath lead before the legs do.',
+    ],
+    recovered: [
+      'You are back in rhythm. Let that prove the moment can settle.',
+      'Good. The body found a steadier signal again.',
+    ],
+    rerouting: [
+      'The route is uncertain, but you do not need to solve it fast. Choose the safest next turn.',
+      'Off route again. Stay calm, slow the decision, and let the map help.',
+    ],
+    rushing: [
+      'You may be rushing a little. Let the breath lead for the next thirty seconds.',
+      'A faster rhythm showed up. Try softer steps and a longer exhale.',
+    ],
+    settled: [
+      'This is the steady zone. You do not have to chase the whole run.',
+      'The rhythm is holding. Stay with breath, step, breath, step.',
+    ],
+  },
+  tired: {
+    fading: [
+      'Energy is dipping. That does not mean you failed. Shorten the stride and keep it kind.',
+      'You are fading a little. Choose easy form over force.',
+    ],
+    paused: [
+      'A pause is allowed. Take a few calm breaths and restart softly if you want to.',
+      'Rest moment. Let energy arrive late if it wants to.',
+    ],
+    recovered: [
+      'There it is. A little rhythm came back.',
+      'Good return. Keep it light, not heroic.',
+    ],
+    rerouting: [
+      'Route trouble costs energy. Keep the choice simple and safe.',
+      'Off route again. No need to push through confusion; reset gently.',
+    ],
+    rushing: [
+      'You may be spending energy too early. Let the pace soften.',
+      'A quick burst showed up. Save some for later.',
+    ],
+    settled: [
+      'This pace is enough. Keep the run easy and real.',
+      'You have found a sustainable rhythm. Stay gentle.',
+    ],
+  },
+  angry: {
+    fading: [
+      'The drive is dropping. Keep control, not punishment. Reset the form.',
+      'If the heat is cooling, do not force it back. Choose clean strength.',
+    ],
+    paused: [
+      'Pause detected. Let the heat settle before you move again.',
+      'Stillness can be control too. Restart when the line is clear.',
+    ],
+    recovered: [
+      'You pulled it back together. Strong and controlled.',
+      'Good reset. The power has direction again.',
+    ],
+    rerouting: [
+      'Route is breaking up. Do not fight it. Choose the safe path and keep control.',
+      'Off route again. Slow the reaction; keep the power yours.',
+    ],
+    rushing: [
+      'Strong pace. Keep the power, soften the shoulders.',
+      'The heat is speeding you up. Hold the strength, drop the fight.',
+    ],
+    settled: [
+      'This is controlled power. Stay here.',
+      'Good. Strong legs, clear head.',
+    ],
+  },
+  sad: {
+    fading: [
+      'The pace is softening. You are still moving, and that still counts.',
+      'A slower patch is okay. Let the road carry a little.',
+    ],
+    paused: [
+      'You have paused. Be gentle with this moment. You can restart softly.',
+      'Stillness is not giving up. Stay with yourself for a breath.',
+    ],
+    recovered: [
+      'You came back to the rhythm. Quietly strong.',
+      'Good. The next step found you again.',
+    ],
+    rerouting: [
+      'The route is uncertain. Keep it simple and safe; the run still counts.',
+      'Off route again. No blame. Reorient gently.',
+    ],
+    rushing: [
+      'No need to outrun the feeling. Let the pace soften enough to hold you.',
+      'A rush appeared. You can slow down and still be brave.',
+    ],
+    settled: [
+      'This quiet rhythm is holding you. Stay with it.',
+      'Gentle and steady. This is care in motion.',
+    ],
+  },
+  bored: {
+    fading: [
+      'The pattern is flattening. Try ten lighter steps, then notice one new detail.',
+      'Energy dipped. Side quest: find a new color before the next corner.',
+    ],
+    paused: [
+      'Pause moment. Look around and pick one tiny route detail before restarting.',
+      'Still for a second. Let curiosity choose the next step.',
+    ],
+    recovered: [
+      'Pattern changed. Nice. Keep the route a little curious.',
+      'Good reset. The run has a new texture now.',
+    ],
+    rerouting: [
+      'Off route again. Treat it like a route remix, but choose the safe option.',
+      'The route changed on you. Keep it curious, not chaotic.',
+    ],
+    rushing: [
+      'Fast mode unlocked. Bring it back just enough to make the game last.',
+      'You sped up. Nice spark; now make it smooth.',
+    ],
+    settled: [
+      'Good rhythm. Side quest: notice one shape you did not expect.',
+      'This pace is working. Keep the route interesting with your eyes up.',
+    ],
+  },
+  excited: {
+    fading: [
+      'The spark is dipping. Bring back focus, not panic.',
+      'Energy is changing. Smooth the next minute and let it rebuild.',
+    ],
+    paused: [
+      'Pause detected. Let the excitement settle into focus before restarting.',
+      'Still moment. Keep the spark, choose the line.',
+    ],
+    recovered: [
+      'Nice. The spark has a clean line again.',
+      'Good reset. Fast can still be smooth.',
+    ],
+    rerouting: [
+      'Route is off again. Do not let excitement choose too fast; pick the safe line.',
+      'Reroute moment. Focus first, speed second.',
+    ],
+    rushing: [
+      'Plenty of energy. Smooth it out so it lasts.',
+      'You are surging. Keep the spark, but choose the line.',
+    ],
+    settled: [
+      'This is focused energy. Stay smooth.',
+      'Good rhythm. The excitement has direction now.',
+    ],
+  },
+  happy: {
+    fading: [
+      'The rhythm is easing. Keep it light; the good feeling can move slowly too.',
+      'A softer patch is fine. Smile at the next easy step.',
+    ],
+    paused: [
+      'Pause moment. Keep the good feeling with you, then restart when it is safe.',
+      'Stillness can hold the joy for a second.',
+    ],
+    recovered: [
+      'Nice return. The good rhythm came back.',
+      'Good reset. Keep the bright feeling moving.',
+    ],
+    rerouting: [
+      'The route is wandering. Keep the mood, choose the safe path.',
+      'Off route again. No problem; let it become part of the run.',
+    ],
+    rushing: [
+      'Joy does not need to sprint away. Ease back and enjoy the route.',
+      'A little rush showed up. Let the good feeling last.',
+    ],
+    settled: [
+      'Lovely rhythm. Save this feeling.',
+      'This pace suits the mood. Keep it bright and easy.',
+    ],
+  },
+  neutral: {
+    fading: [
+      'The pace is dropping a little. Reset gently and keep the shape of the run.',
+      'A slower patch is information, not failure. Adjust and continue.',
+    ],
+    paused: [
+      'Pause detected. Take a moment, then restart when it is safe.',
+      'Still moment. Use it to reset your form.',
+    ],
+    recovered: [
+      'You are back in rhythm. Good adjustment.',
+      'Nice reset. Keep it steady.',
+    ],
+    rerouting: [
+      'Off route again. Reorient calmly and choose the safe path.',
+      'Route changed. Keep the run steady while you reset.',
+    ],
+    rushing: [
+      'You are speeding up a little. Ease back toward the plan.',
+      'A small surge showed up. Smooth it out.',
+    ],
+    settled: [
+      'You are settled now. Keep this steady rhythm.',
+      'Good balance. Let the run stay simple.',
+    ],
+  },
+};
+
 export function getMoodVoiceStyle(mood: MoodId) {
   return moodVoiceStyles[mood];
 }
@@ -213,6 +461,57 @@ export function getPaceFeedbackVoice({ currentPace, mood, paceRange, status }: P
   return currentText
     ? `${statusLine} Current pace ${currentText}; target is ${targetText}.`
     : `${statusLine} Target is ${targetText}.`;
+}
+
+export function getEmotionalCueVoice({ cue, mood }: EmotionalCueVoiceOptions) {
+  const lines = emotionalCueVoiceLines[mood][cue.state];
+  const index = Math.abs(Math.floor(cue.elapsedSec / 45)) % lines.length;
+  return lines[index];
+}
+
+export function getRunStatusCommandVoice({ mood, runData }: RunCommandVoiceOptions) {
+  const paceText = formatPaceSpeech(runData.currentPace ?? runData.averagePace);
+  const progress = getProgressPercent(runData);
+  const closer = pickMetricCloser(mood, runData.time / 300);
+
+  if (!runData.hasLocationFix && runData.distance <= 0) {
+    return 'GPS is still getting ready. Keep the app open and start moving when it locks.';
+  }
+
+  return `${formatDistanceSpeech(runData.distance)} done, ${formatElapsedSpeech(runData.time)} in. ${
+    paceText ? `Current pace ${paceText}. ` : ''
+  }${progress}% complete. ${formatDistanceSpeech(runData.remainingDistance)} left. ${closer}`;
+}
+
+export function getDistanceCommandVoice(runData: RunData) {
+  if (!runData.hasLocationFix && runData.distance <= 0) {
+    return 'No distance yet. GPS is still getting ready.';
+  }
+
+  return `${formatDistanceSpeech(runData.distance)} done. ${formatDistanceSpeech(runData.remainingDistance)} left.`;
+}
+
+export function getPaceCommandVoice(runData: RunData) {
+  const currentPace = formatPaceSpeech(runData.currentPace);
+  const averagePace = formatPaceSpeech(runData.averagePace);
+
+  if (currentPace && averagePace) {
+    return `Current pace ${currentPace}. Average pace ${averagePace}.`;
+  }
+
+  if (averagePace) {
+    return `Average pace ${averagePace}. Keep moving to get a live pace.`;
+  }
+
+  return 'Pace is not ready yet. Keep moving for a little longer.';
+}
+
+export function getTimeCommandVoice(runData: RunData) {
+  return `Run time ${formatElapsedSpeech(runData.time)}.`;
+}
+
+export function getStopRunConfirmationVoice() {
+  return 'To stop this run, say confirm stop.';
 }
 
 export function getGpsStatusVoice(message: string, tone: string) {
@@ -301,6 +600,11 @@ function formatPaceRangeSpeech(paceRange: number[]) {
   const slowText = formatPaceSpeech(slowEdge);
 
   return `${fastText} to ${slowText}`;
+}
+
+function getProgressPercent(runData: RunData) {
+  if (!Number.isFinite(runData.targetDistance) || runData.targetDistance <= 0) return 0;
+  return Math.min(100, Math.floor((runData.distance / runData.targetDistance) * 100));
 }
 
 function pickMetricCloser(mood: MoodId, seed: number) {

@@ -25,15 +25,21 @@ import {
 import { createRouteSetupMap, type RouteSetupMapHandle } from '../features/run-session/routeSetupMap';
 import { createVoiceAssistant } from '../features/voice-assistant/voiceAssistant';
 import {
-  getCheckpointVoice,
   getCompletionVoice,
+  getDistanceCommandVoice,
+  getEmotionalCueVoice,
   getGpsStatusVoice,
   getMetricsVoice,
   getMoodVoiceStyle,
-  getPaceFeedbackVoice,
+  getPaceCommandVoice,
   getRouteGuidanceVoice,
   getRunStartVoice,
+  getRunStatusCommandVoice,
+  getStopRunConfirmationVoice,
+  getTimeCommandVoice,
 } from '../features/voice-assistant/voiceScripts';
+import { createVoiceCommandListener } from '../features/voice-assistant/voiceCommandListener';
+import { parseVoiceRunCommand, type VoiceRunCommand } from '../features/voice-assistant/voiceCommands';
 import { defaultPageByRoute, pageRouteMap } from './router';
 import { useMoodRunStore } from './stores/moodRun';
 import { loadRunHistory, saveRunHistory } from '../services/storage/runHistory';
@@ -95,6 +101,7 @@ export interface MoodRunController {
   startRun: () => Promise<void>;
   toggleMusic: () => void;
   toggleVoice: () => void;
+  toggleVoiceControl: () => void;
   toggleRunTestMode: () => Promise<void>;
   stopRun: () => Promise<void>;
   finishRun: () => Promise<void>;
@@ -108,6 +115,7 @@ export interface MoodRunController {
   saveAvatarChoice: () => Promise<void>;
   renderRunModeToggle: () => void;
   renderVoiceToggle: () => void;
+  renderVoiceControlToggle: () => void;
   selectSound: (sound: string) => void;
 }
 
@@ -143,7 +151,12 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   let routeSetupMap: RouteSetupMapHandle | null = null;
   let routePointSuggestions: Record<RoutePointKind, RoutePlanPoint[]> = { start: [], end: [] };
   let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
+  let stopRunConfirmationExpiresAt = 0;
   const voiceAssistant = createVoiceAssistant();
+  const voiceCommandListener = createVoiceCommandListener({
+    onStatus: handleVoiceControlStatus,
+    onTranscript: handleVoiceTranscript,
+  });
 
   async function init() {
     if (initialized) return;
@@ -155,12 +168,14 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     renderCurrentAvatar();
     renderRunModeToggle();
     renderVoiceToggle();
+    renderVoiceControlToggle();
     window.app = controller;
 
     await syncRoute();
 
     window.addEventListener('beforeunload', () => {
       if (state.runSession) state.runSession.stop();
+      voiceCommandListener.stop();
       voiceAssistant.stop();
       stopBreathing();
       stopPixelFireworks();
@@ -754,9 +769,12 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     }
     renderRunModeToggle();
     renderVoiceToggle();
+    renderVoiceControlToggle();
 
+    stopRunConfirmationExpiresAt = 0;
     voiceAssistant.resetMemory();
     voiceAssistant.setEnabled(state.voiceEnabled);
+    syncVoiceControlListening();
     speakRunVoice(
       getRunStartVoice({
         mood: state.currentMood || 'neutral',
@@ -767,22 +785,33 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     );
 
     state.runSession = startRunTracking(state, {
-      onCheckpoint: (text, checkpointIndex) => {
+      onCheckpoint: (text) => {
         showCelebration(text);
 
         const mood = state.currentMood || 'neutral';
         const isComplete = text === 'TARGET COMPLETE!';
-        const voiceText = isComplete ? getCompletionVoice(mood) : getCheckpointVoice(mood, checkpointIndex, text);
+        if (!isComplete) return;
+
+        const voiceText = getCompletionVoice(mood);
 
         speakRunVoice(voiceText, {
           force: isComplete,
           interrupt: isComplete,
-          key: isComplete ? 'run-complete' : `checkpoint-${checkpointIndex}`,
+          key: 'run-complete',
           minIntervalMs: 0,
         });
       },
       onComplete: () => {
         void finishRun();
+      },
+      onEmotionalCue: (cue) => {
+        const mood = state.currentMood || 'neutral';
+
+        speakRunVoice(getEmotionalCueVoice({ cue, mood }), {
+          interrupt: cue.state === 'paused' || cue.state === 'rerouting',
+          key: `emotion-${cue.state}`,
+          minIntervalMs: 0,
+        });
       },
       onMetricsMilestone: (milestone) => {
         const milestoneId =
@@ -791,15 +820,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
         speakRunVoice(getMetricsVoice({ ...milestone, mood: state.currentMood || 'neutral' }), {
           key: `metrics-${milestone.type}-${milestoneId}`,
           minIntervalMs: 0,
-        });
-      },
-      onPaceFeedback: (feedback) => {
-        const mood = state.currentMood || 'neutral';
-
-        speakRunVoice(getPaceFeedbackVoice({ ...feedback, mood }), {
-          interrupt: feedback.status === 'tooFast' && mood === 'angry',
-          key: `pace-${feedback.status}`,
-          minIntervalMs: feedback.status === 'onTarget' ? 120000 : 90000,
         });
       },
       onRouteGuidance: ({ detail, title, tone }) => {
@@ -854,6 +874,34 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     }
   }
 
+  function toggleVoiceControl() {
+    if (!voiceCommandListener.isSupported()) {
+      state.voiceControlEnabled = false;
+      renderVoiceControlToggle();
+      speakRunVoice('Voice control is not available in this browser.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-control-unavailable',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    state.voiceControlEnabled = !state.voiceControlEnabled;
+    stopRunConfirmationExpiresAt = 0;
+    syncVoiceControlListening();
+    renderVoiceControlToggle();
+
+    if (state.voiceControlEnabled) {
+      speakRunVoice('Voice control is listening.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-control-on',
+        minIntervalMs: 0,
+      });
+    }
+  }
+
   function speakRunVoice(text: string, options: Parameters<typeof voiceAssistant.speak>[1] = {}) {
     const mood = state.currentMood || 'neutral';
 
@@ -861,6 +909,149 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       ...getMoodVoiceStyle(mood),
       ...options,
     });
+  }
+
+  function syncVoiceControlListening() {
+    if (!state.voiceControlEnabled || state.currentPageId !== 'runningPage' || state.runSaved) {
+      voiceCommandListener.stop();
+      renderVoiceControlToggle();
+      return;
+    }
+
+    if (!voiceCommandListener.isSupported()) {
+      state.voiceControlEnabled = false;
+      renderVoiceControlToggle();
+      return;
+    }
+
+    voiceCommandListener.start();
+    renderVoiceControlToggle();
+  }
+
+  function handleVoiceTranscript(transcript: string) {
+    const command = parseVoiceRunCommand(transcript);
+    if (command === 'unknown') return;
+
+    handleVoiceRunCommand(command);
+  }
+
+  function handleVoiceRunCommand(command: VoiceRunCommand) {
+    if (state.currentPageId !== 'runningPage' || state.runSaved) return;
+
+    const now = Date.now();
+    const waitingForStopConfirmation = stopRunConfirmationExpiresAt > now;
+
+    if (waitingForStopConfirmation && command === 'confirmStop') {
+      stopRunConfirmationExpiresAt = 0;
+      speakRunVoice('Stopping run.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-stop-confirmed',
+        minIntervalMs: 0,
+      });
+      window.setTimeout(() => {
+        void finishRun();
+      }, 650);
+      return;
+    }
+
+    if (waitingForStopConfirmation && command === 'cancelStop') {
+      stopRunConfirmationExpiresAt = 0;
+      speakRunVoice('Okay. Run continues.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-stop-cancelled',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command !== 'confirmStop' && command !== 'cancelStop') {
+      stopRunConfirmationExpiresAt = 0;
+    }
+
+    if (command === 'status') {
+      speakRunVoice(getRunStatusCommandVoice({ mood: state.currentMood || 'neutral', runData: state.runData }), {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-status',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command === 'distance') {
+      speakRunVoice(getDistanceCommandVoice(state.runData), {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-distance',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command === 'pace') {
+      speakRunVoice(getPaceCommandVoice(state.runData), {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-pace',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command === 'time') {
+      speakRunVoice(getTimeCommandVoice(state.runData), {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-time',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command === 'muteVoice') {
+      state.voiceEnabled = false;
+      voiceAssistant.setEnabled(false);
+      renderVoiceToggle();
+      return;
+    }
+
+    if (command === 'resumeVoice') {
+      state.voiceEnabled = true;
+      voiceAssistant.setEnabled(true);
+      renderVoiceToggle();
+      speakRunVoice('Voice coach is back on.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-resume',
+        minIntervalMs: 0,
+      });
+      return;
+    }
+
+    if (command === 'stopRun') {
+      stopRunConfirmationExpiresAt = Date.now() + 10000;
+      speakRunVoice(getStopRunConfirmationVoice(), {
+        force: true,
+        interrupt: true,
+        key: 'voice-command-stop-prompt',
+        minIntervalMs: 0,
+      });
+    }
+  }
+
+  function handleVoiceControlStatus(status: { message: string; tone: string }) {
+    renderVoiceControlToggle();
+
+    if (status.tone === 'error' || status.tone === 'warning') {
+      speakRunVoice(status.message, {
+        force: true,
+        interrupt: status.tone === 'error',
+        key: `voice-control-${status.tone}`,
+        minIntervalMs: 60000,
+      });
+    }
   }
 
   async function toggleRunTestMode() {
@@ -890,6 +1081,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       state.runSession = null;
     }
 
+    voiceCommandListener.stop();
+    state.voiceControlEnabled = false;
+    stopRunConfirmationExpiresAt = 0;
     saveRunToHistory();
     state.runSaved = true;
     await showSummary();
@@ -1004,7 +1198,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     if (homeAvatar) homeAvatar.innerHTML = createAvatarSvg(state.avatar);
     if (profileAvatar) {
-      profileAvatar.innerHTML = createAvatarSvg(state.avatar, 'pixel-avatar profile-pixel-avatar');
+      profileAvatar.innerHTML = createAvatarSvg(state.avatar, 'pixel-avatar profile-pixel-avatar', true);
+      profileAvatar.closest<HTMLElement>('.profile-avatar')?.style.setProperty('--avatar-background', state.avatar.backgroundColor);
     }
   }
 
@@ -1013,7 +1208,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     const controls = document.getElementById('avatarControls');
 
     if (preview) {
-      preview.innerHTML = createAvatarSvg(state.avatarDraft, 'pixel-avatar avatar-preview');
+      preview.innerHTML = createAvatarSvg(state.avatarDraft, 'pixel-avatar avatar-preview', true);
+      preview.closest<HTMLElement>('.avatar-preview-frame')?.style.setProperty('--avatar-background', state.avatarDraft.backgroundColor);
     }
 
     if (!controls) return;
@@ -1093,6 +1289,24 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     if (label) label.textContent = supported ? (active ? 'ON' : 'OFF') : 'N/A';
   }
 
+  function renderVoiceControlToggle() {
+    const micToggle = document.getElementById('voiceControlToggle');
+    if (!micToggle) return;
+
+    const supported = voiceCommandListener.isSupported();
+    const active = supported && state.voiceControlEnabled;
+    micToggle.classList.toggle('active', active);
+    micToggle.classList.toggle('unsupported', !supported);
+    micToggle.classList.toggle('listening', active && voiceCommandListener.isListening());
+    micToggle.setAttribute(
+      'aria-label',
+      supported ? (active ? 'Turn voice control off' : 'Turn voice control on') : 'Voice control is unavailable in this browser',
+    );
+
+    const label = micToggle.querySelector('span:last-child');
+    if (label) label.textContent = supported ? (active ? 'ON' : 'OFF') : 'N/A';
+  }
+
   const controller: MoodRunController = {
     init,
     syncRoute,
@@ -1125,6 +1339,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     startRun,
     toggleMusic,
     toggleVoice,
+    toggleVoiceControl,
     toggleRunTestMode,
     stopRun,
     finishRun,
@@ -1138,6 +1353,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     saveAvatarChoice,
     renderRunModeToggle,
     renderVoiceToggle,
+    renderVoiceControlToggle,
     selectSound,
   };
 

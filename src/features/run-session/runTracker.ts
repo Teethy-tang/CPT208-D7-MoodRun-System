@@ -2,6 +2,7 @@ import { moodCheckpoints, moodPlans, runPlanOptions } from '../mood-engine/data'
 import { createLocationService } from './locationService';
 import { createRunMap } from './runMap';
 import { createRunMetrics } from './metricsEngine';
+import { createEmotionalStateEngine, type EmotionalRunCue } from './emotionalStateEngine';
 import { wgs84ToGcj02 } from './coordTransform';
 import type { MoodRunState, PlannedRoute, PositionLike, RoutePlanPoint, RunRecord, RunSessionHandle } from '../../types/moodrun';
 
@@ -36,6 +37,7 @@ interface PaceFeedback {
 interface TrackingCallbacks {
   onCheckpoint: (text: string, checkpointIndex: number) => void;
   onComplete: () => void;
+  onEmotionalCue?: (cue: EmotionalRunCue) => void;
   onMetricsMilestone?: (milestone: MetricsMilestone) => void;
   onPaceFeedback?: (feedback: PaceFeedback) => void;
   onRouteGuidance?: (feedback: RouteGuidanceFeedback) => void;
@@ -53,11 +55,20 @@ const PACE_TOLERANCE_MIN_PER_KM = 0.25;
 
 export function startRunTracking(
   state: MoodRunState,
-  { onCheckpoint, onComplete, onMetricsMilestone, onPaceFeedback, onRouteGuidance, onStatus }: TrackingCallbacks,
+  {
+    onCheckpoint,
+    onComplete,
+    onEmotionalCue,
+    onMetricsMilestone,
+    onPaceFeedback,
+    onRouteGuidance,
+    onStatus,
+  }: TrackingCallbacks,
 ): RunSessionHandle {
   const plan = getActivePlan(state);
   const checkpoints = moodCheckpoints[state.currentMood || 'neutral'];
   const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
+  const emotionalState = createEmotionalStateEngine({ paceRange: plan.paceRange });
   const liveMap = createRunMap();
   let nextCheckpointIndex = 0;
   let nextDistanceMilestoneKm = 1;
@@ -94,6 +105,7 @@ export function startRunTracking(
 
     const progress = updateRunDisplay(state.runData, plan);
     triggerMetricMilestones(snapshot);
+    triggerEmotionalCue(snapshot);
     triggerPaceFeedback(snapshot);
     triggerCheckpoints(progress);
     triggerCompletion(progress);
@@ -115,7 +127,11 @@ export function startRunTracking(
         accuracy: result.snapshot.currentAccuracy,
       });
       const routeFeedback = updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
-      if (routeFeedback) onRouteGuidance?.(routeFeedback);
+      if (routeFeedback) {
+        onRouteGuidance?.(routeFeedback);
+        const routeCue = emotionalState.recordRouteGuidance(routeFeedback, result.snapshot.elapsedSec);
+        if (routeCue) onEmotionalCue?.(routeCue);
+      }
       updateTrackingFeedback(result, state.runTestMode, reportRunStatus);
       syncFromSnapshot(result.snapshot);
     },
@@ -157,6 +173,11 @@ export function startRunTracking(
       });
       nextTimeMilestoneSec += 300;
     }
+  }
+
+  function triggerEmotionalCue(snapshot: ReturnType<typeof metrics.tick>) {
+    const cue = emotionalState.analyzeSnapshot(snapshot);
+    if (cue) onEmotionalCue?.(cue);
   }
 
   function triggerPaceFeedback(snapshot: ReturnType<typeof metrics.tick>) {
@@ -240,6 +261,7 @@ export function makeRunRecord(state: MoodRunState): RunRecord {
     calories: state.runData.calories,
     plan: state.selectedPlan,
     planName: state.runData.planName,
+    voiceControlEnabled: state.voiceControlEnabled,
     voiceEnabled: state.voiceEnabled,
     moodAfter: state.lastMoodShift?.after,
     moodInsight: state.lastMoodShift?.insight,

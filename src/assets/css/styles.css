@@ -1434,7 +1434,8 @@
         }
 
         .music-toggle,
-        .voice-toggle {
+        .voice-toggle,
+        .voice-control-toggle {
             background: rgba(22, 33, 62, 0.8);
             border: 2px solid var(--secondary);
             color: var(--secondary);
@@ -1449,15 +1450,21 @@
         }
 
         .music-toggle.active,
-        .voice-toggle.active {
+        .voice-toggle.active,
+        .voice-control-toggle.active {
             background: var(--secondary);
             color: var(--dark);
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
         }
 
-        .voice-toggle.unsupported {
+        .voice-toggle.unsupported,
+        .voice-control-toggle.unsupported {
             opacity: 0.55;
             cursor: not-allowed;
+        }
+
+        .voice-control-toggle.listening {
+            animation: pulse 1.35s infinite;
         }
 
         .main-stats-display {
@@ -1995,7 +2002,7 @@
         .profile-avatar {
             width: 80px;
             height: 80px;
-            background: var(--dark);
+            background: var(--avatar-background, var(--dark));
             border: 4px solid var(--primary);
             display: flex;
             align-items: center;
@@ -2149,7 +2156,7 @@
             background:
                 linear-gradient(rgba(27, 35, 64, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(27, 35, 64, 0.05) 1px, transparent 1px),
-                rgba(253, 251, 246, 0.94);
+                var(--avatar-background, rgba(253, 251, 246, 0.94));
             background-size: 18px 18px;
             border: 3px solid var(--secondary);
             overflow: hidden;
@@ -2799,6 +2806,7 @@
         .mode-toggle,
         .music-toggle,
         .voice-toggle,
+        .voice-control-toggle,
         .map-overlay,
         .secondary-stat,
         .summary-stat,
@@ -3017,13 +3025,15 @@
         }
 
         .music-toggle,
-        .voice-toggle {
+        .voice-toggle,
+        .voice-control-toggle {
             border-color: rgba(0, 120, 111, 0.45);
             color: #0f786f;
         }
 
         .music-toggle.active,
         .voice-toggle.active,
+        .voice-control-toggle.active,
         .pace-zone.active {
             box-shadow: 0 0 10px rgba(0, 212, 192, 0.24);
         }
@@ -3455,7 +3465,8 @@
 
             .mode-toggle,
             .music-toggle,
-            .voice-toggle {
+            .voice-toggle,
+            .voice-control-toggle {
                 padding: 8px 10px;
                 font-size: 7px;
             }
