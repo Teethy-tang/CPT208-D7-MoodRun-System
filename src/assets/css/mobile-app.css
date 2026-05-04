@@ -133,7 +133,6 @@ button,
 .route-mark-btn,
 .route-distance-choice button,
 .map-expand-toggle,
-.mode-toggle,
 .music-toggle,
 .voice-toggle,
 .voice-control-toggle,
@@ -325,7 +324,7 @@ button,
 
 .running-header {
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) repeat(4, auto);
+  grid-template-columns: minmax(72px, 1fr) repeat(3, auto);
   gap: 8px;
   margin-bottom: 0;
   padding-bottom: 0;
@@ -339,7 +338,6 @@ button,
   white-space: nowrap;
 }
 
-.mode-toggle,
 .music-toggle,
 .voice-toggle,
 .voice-control-toggle {
@@ -773,7 +771,7 @@ button,
   }
 
   .running-header {
-    grid-template-columns: minmax(70px, 1fr) repeat(4, minmax(42px, auto));
+    grid-template-columns: minmax(70px, 1fr) repeat(3, minmax(42px, auto));
   }
 
   .run-control-icon {
@@ -890,10 +888,6 @@ button,
     grid-template-columns: 1fr repeat(2, minmax(44px, auto));
   }
 
-  .music-toggle {
-    display: none;
-  }
-
   .voice-control-toggle {
     display: none;
   }
@@ -947,7 +941,7 @@ button,
     font-size: 9px;
   }
 
-  .mode-toggle,
+  .music-toggle,
   .voice-toggle {
     min-width: 42px;
     padding-inline: 7px;

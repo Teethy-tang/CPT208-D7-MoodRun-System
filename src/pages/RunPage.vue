@@ -32,7 +32,6 @@ async function toggleMapExpansion() {
   <div class="page running-page active" id="runningPage">
     <div class="running-header">
       <h2 class="running-title">RUNNING...</h2>
-      <button class="mode-toggle" id="runModeToggle" type="button" @click="app.toggleRunTestMode()">LIVE</button>
       <button class="music-toggle active" id="musicToggle" type="button" @click="app.toggleMusic()">
         <span class="run-control-icon music-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false">
@@ -41,7 +40,6 @@ async function toggleMapExpansion() {
             <path d="M18 16 C18 17.7 16.7 19 15 19 C13.3 19 12 17.7 12 16 C12 14.3 13.3 13 15 13 C16.7 13 18 14.3 18 16 Z" />
           </svg>
         </span>
-        <span class="run-control-state">ON</span>
       </button>
       <button class="voice-toggle active" id="voiceToggle" type="button" @click="app.toggleVoice()">
         <span class="run-control-icon voice-icon" aria-hidden="true">

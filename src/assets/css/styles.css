@@ -1204,24 +1204,6 @@
 
         }
 
-        .mode-toggle {
-            margin-left: auto;
-            border: 2px solid var(--accent);
-            background: rgba(22, 33, 62, 0.8);
-            color: var(--accent);
-            padding: 8px 12px;
-            font-family: var(--font-pixel);
-            font-size: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .mode-toggle.active {
-            background: var(--accent);
-            color: var(--dark);
-            box-shadow: 0 0 15px rgba(255, 216, 77, 0.35);
-        }
-
         .map-stage {
             height: 230px;
             margin-bottom: 20px;
@@ -1466,6 +1448,12 @@
             align-items: center;
             gap: 6px;
             transition: all 0.2s;
+        }
+
+        .music-toggle {
+            width: 54px;
+            justify-content: center;
+            padding: 8px;
         }
 
         .music-toggle.active,
@@ -2822,7 +2810,6 @@
         .plan-item,
         .form-group input,
         .form-group select,
-        .mode-toggle,
         .music-toggle,
         .voice-toggle,
         .voice-control-toggle,
@@ -3036,11 +3023,6 @@
 
         .map-container {
             border-color: rgba(0, 120, 111, 0.28);
-        }
-
-        .mode-toggle {
-            color: #a76100;
-            border-color: rgba(255, 216, 77, 0.72);
         }
 
         .music-toggle,
@@ -3499,7 +3481,6 @@
                 padding-bottom: 6px;
             }
 
-            .mode-toggle,
             .music-toggle,
             .voice-toggle,
             .voice-control-toggle {

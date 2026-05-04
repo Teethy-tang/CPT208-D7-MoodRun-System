@@ -112,7 +112,6 @@ export function startRunTracking(
   };
 
   const locationService = createLocationService({
-    useMock: !!state.runTestMode,
     onStatus: ({ message, tone }) => {
       reportRunStatus(message, tone);
     },
@@ -132,7 +131,7 @@ export function startRunTracking(
         const routeCue = emotionalState.recordRouteGuidance(routeFeedback, result.snapshot.elapsedSec);
         if (routeCue) onEmotionalCue?.(routeCue);
       }
-      updateTrackingFeedback(result, state.runTestMode, reportRunStatus);
+      updateTrackingFeedback(result, reportRunStatus);
       syncFromSnapshot(result.snapshot);
     },
   });
@@ -424,16 +423,10 @@ function setRouteGuidance(title: string, detail: string, tone: string) {
 
 function updateTrackingFeedback(
   result: ReturnType<ReturnType<typeof createRunMetrics>['addPosition']>,
-  isTestMode: boolean,
   reportRunStatus: (message: string, tone?: string) => void,
 ) {
   const accuracy = result.snapshot.currentAccuracy;
   const roundedAccuracy = Number.isFinite(accuracy) ? Math.round(accuracy as number) : null;
-
-  if (isTestMode) {
-    reportRunStatus('Desktop test route active. Simulated movement is feeding the tracker.', 'test');
-    return;
-  }
 
   if (result.accepted && result.snapshot.routePointCount > 1) {
     reportRunStatus(

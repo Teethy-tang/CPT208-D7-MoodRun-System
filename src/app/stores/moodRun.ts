@@ -46,7 +46,6 @@ export const useMoodRunStore = defineStore('moodRun', {
       meditationAudioEnabled: false,
       meditationVolume: 0.65,
       voiceEnabled: true,
-      runTestMode: false,
       runSession: null,
       runSaved: false,
     };

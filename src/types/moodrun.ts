@@ -167,7 +167,6 @@ export interface MoodRunState {
   meditationAudioEnabled: boolean;
   meditationVolume: number;
   voiceEnabled: boolean;
-  runTestMode: boolean;
   runSession: RunSessionHandle | null;
   runSaved: boolean;
 }

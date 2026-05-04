@@ -23,6 +23,7 @@ import {
   makeRunRecord,
   startRunTracking,
 } from '../features/run-session/runTracker';
+import { createRunningMusic } from '../features/run-session/runningMusic';
 import { createRouteSetupMap, type RouteSetupMapHandle } from '../features/run-session/routeSetupMap';
 import { createVoiceAssistant } from '../features/voice-assistant/voiceAssistant';
 import {
@@ -104,7 +105,6 @@ export interface MoodRunController {
   toggleMusic: () => void;
   toggleVoice: () => void;
   toggleVoiceControl: () => void;
-  toggleRunTestMode: () => Promise<void>;
   stopRun: () => Promise<void>;
   finishRun: () => Promise<void>;
   showSummary: () => Promise<void>;
@@ -115,7 +115,6 @@ export interface MoodRunController {
   selectAvatarOption: (key: keyof AvatarConfig, value: string) => void;
   randomizeAvatar: () => void;
   saveAvatarChoice: () => Promise<void>;
-  renderRunModeToggle: () => void;
   renderVoiceToggle: () => void;
   renderVoiceControlToggle: () => void;
   selectSound: (sound: MeditationSound) => Promise<void>;
@@ -155,6 +154,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
   let stopRunConfirmationExpiresAt = 0;
   const meditationAudio = createMeditationAudio();
+  const runningMusic = createRunningMusic();
   const voiceAssistant = createVoiceAssistant();
   const voiceCommandListener = createVoiceCommandListener({
     onStatus: handleVoiceControlStatus,
@@ -169,7 +169,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     initGravityGrid(document.getElementById('gravityGrid') as HTMLCanvasElement | null);
     initNavGlow(document.querySelector('.bottom-nav') as HTMLElement | null);
     renderCurrentAvatar();
-    renderRunModeToggle();
     renderVoiceToggle();
     renderVoiceControlToggle();
     window.app = controller;
@@ -178,6 +177,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     window.addEventListener('beforeunload', () => {
       if (state.runSession) state.runSession.stop();
+      runningMusic.stop();
       voiceCommandListener.stop();
       voiceAssistant.stop();
       meditationAudio.stop({ fade: false });
@@ -228,6 +228,10 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     if (pageId !== 'summaryPage') {
       stopPixelFireworks();
+    }
+
+    if (pageId !== 'runningPage') {
+      runningMusic.stop();
     }
 
     if (pageId !== 'meditationPage') {
@@ -777,9 +781,10 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     if (state.runSession) {
       state.runSession.stop();
     }
+    runningMusic.stop();
 
-    await showPage('runningPage');
     const activePlan = getActivePlan(state);
+    await showPage('runningPage');
 
     state.runData = {
       distance: 0,
@@ -801,16 +806,10 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     state.runSaved = false;
     state.lastMoodShift = moodOutcomes[state.currentMood || 'neutral'];
 
-    const musicToggle = document.getElementById('musicToggle');
-    if (musicToggle) {
-      musicToggle.classList.add('active');
-      musicToggle.setAttribute('aria-label', 'Turn music off');
-      const text = musicToggle.querySelector('span:last-child');
-      if (text) text.textContent = 'ON';
-    }
-    renderRunModeToggle();
+    renderMusicToggle();
     renderVoiceToggle();
     renderVoiceControlToggle();
+    startRunMusic(activePlan);
 
     stopRunConfirmationExpiresAt = 0;
     voiceAssistant.resetMemory();
@@ -886,13 +885,39 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   function toggleMusic() {
     state.musicEnabled = !state.musicEnabled;
 
+    if (!state.musicEnabled) {
+      runningMusic.pause();
+      renderMusicToggle();
+      return;
+    }
+
+    const activePlan = getActivePlan(state);
+    void runningMusic.playForPlan(activePlan).then((isPlaying) => {
+      state.musicEnabled = isPlaying;
+      renderMusicToggle();
+    });
+    renderMusicToggle();
+  }
+
+  function startRunMusic(activePlan: ReturnType<typeof getActivePlan>) {
+    void runningMusic.playForPlan(activePlan, { restart: true }).then((isPlaying) => {
+      state.musicEnabled = isPlaying;
+      renderMusicToggle();
+
+      if (!isPlaying) {
+        console.warn('Running music could not start for this session.');
+      }
+    });
+  }
+
+  function renderMusicToggle() {
     const button = document.getElementById('musicToggle');
     if (!button) return;
 
-    button.classList.toggle('active', state.musicEnabled);
-    button.setAttribute('aria-label', state.musicEnabled ? 'Turn music off' : 'Turn music on');
-    const label = button.querySelector('span:last-child');
-    if (label) label.textContent = state.musicEnabled ? 'ON' : 'OFF';
+    const isPlaying = state.musicEnabled && runningMusic.isPlaying();
+    button.classList.toggle('active', isPlaying);
+    button.setAttribute('aria-label', isPlaying ? 'Pause running music' : 'Play running music');
+    button.setAttribute('aria-pressed', String(isPlaying));
   }
 
   function toggleVoice() {
@@ -1096,20 +1121,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     }
   }
 
-  async function toggleRunTestMode() {
-    state.runTestMode = !state.runTestMode;
-    renderRunModeToggle();
-
-    if (document.getElementById('runningPage')?.classList.contains('active') && !state.runSaved) {
-      if (state.runSession) {
-        state.runSession.stop();
-        state.runSession = null;
-      }
-
-      await startRun();
-    }
-  }
-
   async function stopRun() {
     voiceAssistant.stop();
     await finishRun();
@@ -1123,6 +1134,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       state.runSession = null;
     }
 
+    runningMusic.stop();
     voiceCommandListener.stop();
     state.voiceControlEnabled = false;
     stopRunConfirmationExpiresAt = 0;
@@ -1302,18 +1314,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     await goHome();
   }
 
-  function renderRunModeToggle() {
-    const modeToggle = document.getElementById('runModeToggle');
-    if (!modeToggle) return;
-
-    modeToggle.classList.toggle('active', state.runTestMode);
-    modeToggle.textContent = state.runTestMode ? 'TEST' : 'LIVE';
-    modeToggle.setAttribute(
-      'aria-label',
-      state.runTestMode ? 'Switch to live GPS tracking' : 'Switch to desktop test mode',
-    );
-  }
-
   function renderVoiceToggle() {
     const voiceToggle = document.getElementById('voiceToggle');
     if (!voiceToggle) return;
@@ -1387,7 +1387,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     toggleMusic,
     toggleVoice,
     toggleVoiceControl,
-    toggleRunTestMode,
     stopRun,
     finishRun,
     showSummary,
@@ -1398,7 +1397,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     selectAvatarOption,
     randomizeAvatar: randomizeAvatarChoice,
     saveAvatarChoice,
-    renderRunModeToggle,
     renderVoiceToggle,
     renderVoiceControlToggle,
     selectSound,
