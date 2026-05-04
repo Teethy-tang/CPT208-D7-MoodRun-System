@@ -5,8 +5,8 @@ export function initCursorGlow(cursorGlow: HTMLElement | null) {
   if (!cursorGlow) return;
   const glow = cursorGlow;
 
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
+  let mouseX = window.innerWidth * 0.55;
+  let mouseY = window.innerHeight * 0.43;
   let currentX = mouseX;
   let currentY = mouseY;
 

@@ -598,7 +598,7 @@ button,
   }
 
   .slogan-main {
-    font-size: clamp(42px, 17vw, 70px);
+    font-size: clamp(38px, 12vw, 58px);
     text-shadow: 3px 3px 0 var(--primary), 0 0 14px rgba(0, 255, 204, 0.42);
   }
 
@@ -610,8 +610,8 @@ button,
 
   .home-avatar-prompt {
     align-items: center;
-    flex: 0 0 auto;
-    width: min(150px, 38vw);
+    flex: 0 0 min(150px, 38vw);
+    min-width: min(150px, 38vw);
   }
 
   .decoration-icon {
