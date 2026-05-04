@@ -1,6 +1,55 @@
 let fireworksInterval: number | null = null;
 let breathInterval: number | null = null;
 
+type BackgroundRunner = {
+  xOffset: number;
+  frameOffset: number;
+  shirt: string;
+  accent: string;
+  scale: number;
+  alpha: number;
+};
+
+const homeBackgroundRunningGroup = {
+  laneRatio: 0.5,
+  speed: 0.024,
+  offset: 0.24,
+  runners: [
+    {
+      xOffset: -38,
+      frameOffset: 1,
+      shirt: '#79e1d6',
+      accent: '#f993be',
+      scale: 0.9,
+      alpha: 0.34,
+    },
+    {
+      xOffset: -8,
+      frameOffset: 0,
+      shirt: '#f993be',
+      accent: '#ffeb53',
+      scale: 1,
+      alpha: 0.4,
+    },
+    {
+      xOffset: 24,
+      frameOffset: 2,
+      shirt: '#9d69f6',
+      accent: '#79e1d6',
+      scale: 0.88,
+      alpha: 0.32,
+    },
+  ] satisfies BackgroundRunner[],
+};
+
+function hexToRgba(hex: string, alpha: number) {
+  const match = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!match) return hex;
+
+  const [, red, green, blue] = match;
+  return `rgba(${parseInt(red, 16)}, ${parseInt(green, 16)}, ${parseInt(blue, 16)}, ${alpha})`;
+}
+
 export function initCursorGlow(cursorGlow: HTMLElement | null) {
   if (!cursorGlow) return;
   const glow = cursorGlow;
@@ -72,6 +121,7 @@ export function initGravityGrid(canvas: HTMLCanvasElement | null) {
     gridCanvas.width = Math.round(size.width * size.dpr);
     gridCanvas.height = Math.round(size.height * size.dpr);
     context.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
+    context.imageSmoothingEnabled = false;
   }
 
   function setPointerPosition(clientX: number, clientY: number) {
@@ -170,6 +220,99 @@ export function initGravityGrid(canvas: HTMLCanvasElement | null) {
     }
   }
 
+  function snapToGridLine(value: number, step: number) {
+    return Math.round(value / step) * step;
+  }
+
+  function drawPixelRect(x: number, y: number, width: number, height: number, unit: number, fill: string) {
+    context.fillStyle = fill;
+    context.fillRect(
+      Math.round(x * unit),
+      Math.round(y * unit),
+      Math.max(1, Math.round(width * unit)),
+      Math.max(1, Math.round(height * unit)),
+    );
+  }
+
+  function drawPixelRunner(
+    x: number,
+    y: number,
+    runner: BackgroundRunner,
+    frame: number,
+    alpha: number,
+  ) {
+    const unit = (size.width < 520 ? 1.65 : 1.85) * runner.scale;
+    const bob = frame % 2 === 0 ? -unit : 0;
+    const skin = '#ffc28d';
+    const ink = '#1b2340';
+    const shoe = '#4f5a7f';
+    const trail = hexToRgba(runner.accent, 0.18);
+    const leadingKnee = frame % 2 === 0;
+
+    context.save();
+    context.translate(Math.round(x), Math.round(y + bob));
+    context.globalAlpha = alpha;
+
+    drawPixelRect(-6, 1, 11, 1, unit, 'rgba(27, 35, 64, 0.1)');
+    drawPixelRect(-13, -5, 3, 1, unit, trail);
+    drawPixelRect(-16, -7, 2, 1, unit, trail);
+
+    if (leadingKnee) {
+      drawPixelRect(-4, -7, 2, 3, unit, runner.accent);
+      drawPixelRect(-5, -5, 3, 2, unit, skin);
+      drawPixelRect(-7, -4, 4, 1, unit, shoe);
+      drawPixelRect(1, -5, 2, 5, unit, skin);
+      drawPixelRect(2, -1, 4, 2, unit, shoe);
+    } else {
+      drawPixelRect(2, -7, 2, 3, unit, runner.accent);
+      drawPixelRect(2, -5, 3, 2, unit, skin);
+      drawPixelRect(2, -3, 4, 1, unit, shoe);
+      drawPixelRect(-2, -5, 2, 5, unit, skin);
+      drawPixelRect(-5, -1, 4, 2, unit, shoe);
+    }
+
+    drawPixelRect(-4, -10, 2, 4, unit, skin);
+    drawPixelRect(-5, -7, 3, 2, unit, runner.accent);
+    drawPixelRect(3, -10, 2, 3, unit, skin);
+    drawPixelRect(4, -11, 3, 2, unit, runner.accent);
+
+    drawPixelRect(-3, -11, 6, 6, unit, runner.shirt);
+    drawPixelRect(-4, -9, 8, 3, unit, runner.shirt);
+    drawPixelRect(-2, -10, 2, 1, unit, 'rgba(255, 255, 255, 0.42)');
+
+    drawPixelRect(-3, -16, 7, 5, unit, skin);
+    drawPixelRect(-2, -17, 5, 1, unit, runner.accent);
+    drawPixelRect(-4, -15, 4, 2, unit, runner.accent);
+    drawPixelRect(2, -14, 1, 1, unit, ink);
+    drawPixelRect(3, -12, 1, 1, unit, '#f993be');
+
+    context.restore();
+  }
+
+  function drawHomeBackgroundRunners(now: number, strength: number, step: number) {
+    if (homePresence <= 0.03 || size.width < 300 || size.height < 360) return;
+
+    const travelPadding = 112;
+    const travelWidth = size.width + travelPadding * 2;
+    const rawY = snapToGridLine(size.height * homeBackgroundRunningGroup.laneRatio, step);
+    const y = Math.max(step * 2, Math.min(size.height - step * 1.5, rawY));
+    const baseX =
+      ((now * homeBackgroundRunningGroup.speed + homeBackgroundRunningGroup.offset * travelWidth) % travelWidth) -
+      travelPadding;
+
+    homeBackgroundRunningGroup.runners.forEach((runner) => {
+      const x = baseX + runner.xOffset;
+      const point = getDistortion(x, y, strength * 0.82);
+      const frame = Math.floor(now / 155 + runner.frameOffset) % 4;
+      const laneFade = x < 0 ? Math.max(0, (x + travelPadding) / travelPadding) : 1;
+      const edgeFade = x > size.width ? Math.max(0, (travelPadding - (x - size.width)) / travelPadding) : 1;
+      const alpha = runner.alpha * homePresence * Math.min(laneFade, edgeFade);
+
+      if (alpha <= 0.02) return;
+      drawPixelRunner(point.x, point.y, runner, frame, alpha);
+    });
+  }
+
   function draw() {
     const now = performance.now();
     const homeTarget = isHomeVisible() ? 1 : 0;
@@ -200,6 +343,10 @@ export function initGravityGrid(canvas: HTMLCanvasElement | null) {
       const points = buildLine(false, y, step, strength);
       drawGridLine(points, baseStroke);
       drawAccentSegments(points, y % (step * 2) === 0 ? pinkGlow : cyanGlow, strength);
+    }
+
+    if (!reducedMotion.matches) {
+      drawHomeBackgroundRunners(now, strength, step);
     }
 
     if (reducedMotion.matches) {
