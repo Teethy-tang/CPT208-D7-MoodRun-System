@@ -5,26 +5,70 @@ import { createRunMetrics } from './metricsEngine';
 import { wgs84ToGcj02 } from './coordTransform';
 import type { MoodRunState, PlannedRoute, PositionLike, RoutePlanPoint, RunRecord, RunSessionHandle } from '../../types/moodrun';
 
+interface TrackingStatus {
+  message: string;
+  tone: string;
+}
+
+interface RouteGuidanceFeedback {
+  detail: string;
+  title: string;
+  tone: string;
+}
+
+interface MetricsMilestone {
+  averagePace: number | null;
+  distanceKm: number;
+  elapsedSec: number;
+  type: 'distance' | 'time';
+}
+
+type PaceFeedbackStatus = 'onTarget' | 'tooFast' | 'tooSlow';
+
+interface PaceFeedback {
+  averagePace: number | null;
+  currentPace: number | null;
+  elapsedSec: number;
+  paceRange: number[];
+  status: PaceFeedbackStatus;
+}
+
 interface TrackingCallbacks {
-  onCheckpoint: (text: string) => void;
+  onCheckpoint: (text: string, checkpointIndex: number) => void;
   onComplete: () => void;
+  onMetricsMilestone?: (milestone: MetricsMilestone) => void;
+  onPaceFeedback?: (feedback: PaceFeedback) => void;
+  onRouteGuidance?: (feedback: RouteGuidanceFeedback) => void;
+  onStatus?: (status: TrackingStatus) => void;
 }
 
 const START_DISTANCE_WARNING_METERS = 300;
 const OFF_ROUTE_WARNING_METERS = 120;
 const BACK_ON_ROUTE_METERS = 80;
+const PACE_FEEDBACK_MIN_DISTANCE_KM = 0.12;
+const PACE_FEEDBACK_MIN_ELAPSED_SEC = 45;
+const PACE_FEEDBACK_INTERVAL_SEC = 90;
+const PACE_FEEDBACK_SWITCH_INTERVAL_SEC = 45;
+const PACE_TOLERANCE_MIN_PER_KM = 0.25;
 
-export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete }: TrackingCallbacks): RunSessionHandle {
+export function startRunTracking(
+  state: MoodRunState,
+  { onCheckpoint, onComplete, onMetricsMilestone, onPaceFeedback, onRouteGuidance, onStatus }: TrackingCallbacks,
+): RunSessionHandle {
   const plan = getActivePlan(state);
   const checkpoints = moodCheckpoints[state.currentMood || 'neutral'];
   const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
   const liveMap = createRunMap();
   let nextCheckpointIndex = 0;
+  let nextDistanceMilestoneKm = 1;
+  let nextTimeMilestoneSec = 300;
+  let lastPaceFeedbackSec = 0;
+  let lastPaceStatus: PaceFeedbackStatus | null = null;
   let completed = false;
   let stopped = false;
 
   resetRunDisplay(plan);
-  updateRunStatus('Requesting GPS access...', 'info');
+  reportRunStatus('Requesting GPS access...', 'info');
   void liveMap.reset(state.selectedRoute);
 
   const syncFromSnapshot = (snapshot: ReturnType<typeof metrics.tick>) => {
@@ -49,6 +93,8 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
     };
 
     const progress = updateRunDisplay(state.runData, plan);
+    triggerMetricMilestones(snapshot);
+    triggerPaceFeedback(snapshot);
     triggerCheckpoints(progress);
     triggerCompletion(progress);
   };
@@ -56,7 +102,7 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
   const locationService = createLocationService({
     useMock: !!state.runTestMode,
     onStatus: ({ message, tone }) => {
-      updateRunStatus(message, tone);
+      reportRunStatus(message, tone);
     },
     onError: ({ message }) => {
       state.runData.lastTrackingError = message;
@@ -68,8 +114,9 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
         reason: result.reason,
         accuracy: result.snapshot.currentAccuracy,
       });
-      updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
-      updateTrackingFeedback(result, state.runTestMode);
+      const routeFeedback = updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
+      if (routeFeedback) onRouteGuidance?.(routeFeedback);
+      updateTrackingFeedback(result, state.runTestMode, reportRunStatus);
       syncFromSnapshot(result.snapshot);
     },
   });
@@ -81,9 +128,72 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
   function triggerCheckpoints(progress: number) {
     const nextCheckpoint = checkpoints[nextCheckpointIndex];
     if (nextCheckpoint && progress >= nextCheckpoint.progress) {
-      onCheckpoint(nextCheckpoint.text);
+      onCheckpoint(nextCheckpoint.text, nextCheckpointIndex);
       nextCheckpointIndex += 1;
     }
+  }
+
+  function triggerMetricMilestones(snapshot: ReturnType<typeof metrics.tick>) {
+    if (!snapshot.hasLocationFix) return;
+
+    while (snapshot.distanceKm >= nextDistanceMilestoneKm) {
+      onMetricsMilestone?.({
+        averagePace: snapshot.averagePace,
+        distanceKm: nextDistanceMilestoneKm,
+        elapsedSec: snapshot.elapsedSec,
+        type: 'distance',
+      });
+      nextDistanceMilestoneKm += 1;
+    }
+
+    if (snapshot.distanceKm < 0.05) return;
+
+    while (snapshot.elapsedSec >= nextTimeMilestoneSec) {
+      onMetricsMilestone?.({
+        averagePace: snapshot.averagePace,
+        distanceKm: snapshot.distanceKm,
+        elapsedSec: snapshot.elapsedSec,
+        type: 'time',
+      });
+      nextTimeMilestoneSec += 300;
+    }
+  }
+
+  function triggerPaceFeedback(snapshot: ReturnType<typeof metrics.tick>) {
+    if (!snapshot.hasLocationFix || snapshot.distanceKm < PACE_FEEDBACK_MIN_DISTANCE_KM) return;
+    if (snapshot.elapsedSec < PACE_FEEDBACK_MIN_ELAPSED_SEC) return;
+
+    const pace = snapshot.currentPace ?? snapshot.averagePace;
+    if (!Number.isFinite(pace)) return;
+
+    const [fastEdge, slowEdge] = plan.paceRange;
+    let status: PaceFeedbackStatus | null = null;
+
+    if ((pace as number) < fastEdge - PACE_TOLERANCE_MIN_PER_KM) {
+      status = 'tooFast';
+    } else if ((pace as number) > slowEdge + PACE_TOLERANCE_MIN_PER_KM) {
+      status = 'tooSlow';
+    } else if (lastPaceStatus && lastPaceStatus !== 'onTarget') {
+      status = 'onTarget';
+    }
+
+    if (!status) return;
+
+    const secondsSinceLastFeedback = snapshot.elapsedSec - lastPaceFeedbackSec;
+    const requiredInterval =
+      status === lastPaceStatus ? PACE_FEEDBACK_INTERVAL_SEC : PACE_FEEDBACK_SWITCH_INTERVAL_SEC;
+
+    if (secondsSinceLastFeedback < requiredInterval) return;
+
+    lastPaceFeedbackSec = snapshot.elapsedSec;
+    lastPaceStatus = status;
+    onPaceFeedback?.({
+      averagePace: snapshot.averagePace,
+      currentPace: snapshot.currentPace,
+      elapsedSec: snapshot.elapsedSec,
+      paceRange: plan.paceRange,
+      status,
+    });
   }
 
   function triggerCompletion(progress: number) {
@@ -91,8 +201,13 @@ export function startRunTracking(state: MoodRunState, { onCheckpoint, onComplete
 
     completed = true;
     stopTracking();
-    onCheckpoint('TARGET COMPLETE!');
+    onCheckpoint('TARGET COMPLETE!', checkpoints.length);
     window.setTimeout(onComplete, 850);
+  }
+
+  function reportRunStatus(message: string, tone = 'info') {
+    updateRunStatus(message, tone);
+    onStatus?.({ message, tone });
   }
 
   function stopTracking() {
@@ -125,6 +240,7 @@ export function makeRunRecord(state: MoodRunState): RunRecord {
     calories: state.runData.calories,
     plan: state.selectedPlan,
     planName: state.runData.planName,
+    voiceEnabled: state.voiceEnabled,
     moodAfter: state.lastMoodShift?.after,
     moodInsight: state.lastMoodShift?.insight,
   };
@@ -231,10 +347,14 @@ function resetRouteGuidance() {
   if (pill) pill.hidden = true;
 }
 
-function updateRouteGuidance(route: PlannedRoute | null, position: PositionLike, routePointCount: number) {
+function updateRouteGuidance(
+  route: PlannedRoute | null,
+  position: PositionLike,
+  routePointCount: number,
+): RouteGuidanceFeedback | null {
   if (!route) {
     resetRouteGuidance();
-    return;
+    return null;
   }
 
   const current = toGcjPoint(position);
@@ -242,25 +362,32 @@ function updateRouteGuidance(route: PlannedRoute | null, position: PositionLike,
   const routeDistance = distanceToRouteMeters(current, route);
 
   if (routePointCount <= 1 && startDistance > START_DISTANCE_WARNING_METERS) {
-    setRouteGuidance(
-      'START POINT AWAY',
-      `${formatMeters(startDistance)} to route start. Head there, or begin from here.`,
-      'warning',
-    );
-    return;
+    const feedback = {
+      detail: `${formatMeters(startDistance)} to route start. Head there, or begin from here.`,
+      title: 'START POINT AWAY',
+      tone: 'warning',
+    };
+    setRouteGuidance(feedback.title, feedback.detail, feedback.tone);
+    return feedback;
   }
 
   if (routeDistance > OFF_ROUTE_WARNING_METERS) {
-    setRouteGuidance('OFF ROUTE', `${formatMeters(routeDistance)} from recommended route. Free run continues.`, 'offroute');
-    return;
+    const feedback = {
+      detail: `${formatMeters(routeDistance)} from recommended route. Free run continues.`,
+      title: 'OFF ROUTE',
+      tone: 'offroute',
+    };
+    setRouteGuidance(feedback.title, feedback.detail, feedback.tone);
+    return feedback;
   }
 
   if (routeDistance <= BACK_ON_ROUTE_METERS) {
     resetRouteGuidance();
-    return;
+    return null;
   }
 
   resetRouteGuidance();
+  return null;
 }
 
 function setRouteGuidance(title: string, detail: string, tone: string) {
@@ -273,17 +400,21 @@ function setRouteGuidance(title: string, detail: string, tone: string) {
   setText('routeGuidanceDetail', detail);
 }
 
-function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMetrics>['addPosition']>, isTestMode: boolean) {
+function updateTrackingFeedback(
+  result: ReturnType<ReturnType<typeof createRunMetrics>['addPosition']>,
+  isTestMode: boolean,
+  reportRunStatus: (message: string, tone?: string) => void,
+) {
   const accuracy = result.snapshot.currentAccuracy;
   const roundedAccuracy = Number.isFinite(accuracy) ? Math.round(accuracy as number) : null;
 
   if (isTestMode) {
-    updateRunStatus('Desktop test route active. Simulated movement is feeding the tracker.', 'test');
+    reportRunStatus('Desktop test route active. Simulated movement is feeding the tracker.', 'test');
     return;
   }
 
   if (result.accepted && result.snapshot.routePointCount > 1) {
-    updateRunStatus(
+    reportRunStatus(
       roundedAccuracy !== null ? `Tracking live. Current accuracy ${roundedAccuracy}m.` : 'Tracking live.',
       'ready',
     );
@@ -291,7 +422,7 @@ function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMe
   }
 
   if (result.accepted && result.snapshot.routePointCount === 1) {
-    updateRunStatus(
+    reportRunStatus(
       roundedAccuracy !== null
         ? `Location captured at ${roundedAccuracy}m accuracy. Start moving to build distance.`
         : 'Location captured. Start moving to build distance.',
@@ -301,7 +432,7 @@ function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMe
   }
 
   if (result.reason === 'accuracy') {
-    updateRunStatus(
+    reportRunStatus(
       roundedAccuracy !== null
         ? `Location found, but accuracy is still ${roundedAccuracy}m. Waiting for a clearer fix.`
         : 'Location found, but accuracy is still weak. Waiting for a clearer fix.',
@@ -311,12 +442,12 @@ function updateTrackingFeedback(result: ReturnType<ReturnType<typeof createRunMe
   }
 
   if (result.reason === 'jitter') {
-    updateRunStatus('Position is stable. Start moving to begin distance tracking.', 'info');
+    reportRunStatus('Position is stable. Start moving to begin distance tracking.', 'info');
     return;
   }
 
   if (result.reason === 'speed') {
-    updateRunStatus('A large GPS jump was ignored. Waiting for a stable position update.', 'warning');
+    reportRunStatus('A large GPS jump was ignored. Waiting for a stable position update.', 'warning');
   }
 }
 

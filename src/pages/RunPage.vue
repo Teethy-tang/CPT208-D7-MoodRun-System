@@ -21,8 +21,12 @@ async function toggleMapExpansion() {
     <div class="running-header">
       <h2 class="running-title">RUNNING...</h2>
       <button class="mode-toggle" id="runModeToggle" type="button" @click="app.toggleRunTestMode()">LIVE</button>
-      <button class="music-toggle active" id="musicToggle" @click="app.toggleMusic()">
-        <span class="music-icon">♪</span>
+      <button class="music-toggle active" id="musicToggle" type="button" @click="app.toggleMusic()">
+        <span class="music-icon" aria-hidden="true">MUS</span>
+        <span>ON</span>
+      </button>
+      <button class="voice-toggle active" id="voiceToggle" type="button" @click="app.toggleVoice()">
+        <span class="voice-icon" aria-hidden="true">)))</span>
         <span>ON</span>
       </button>
     </div>
@@ -89,6 +93,6 @@ async function toggleMapExpansion() {
         <div class="pace-zone" id="zoneAerobic">AEROBIC</div>
       </div>
     </div>
-    <button class="stop-btn" id="runActionBtn" @click="app.stopRun()">STOP RUN</button>
+    <button class="stop-btn" id="runActionBtn" type="button" @click="app.stopRun()">STOP RUN</button>
   </div>
 </template>

@@ -1433,7 +1433,8 @@
             50% { opacity: 0.6; }
         }
 
-        .music-toggle {
+        .music-toggle,
+        .voice-toggle {
             background: rgba(22, 33, 62, 0.8);
             border: 2px solid var(--secondary);
             color: var(--secondary);
@@ -1447,10 +1448,16 @@
             transition: all 0.2s;
         }
 
-        .music-toggle.active {
+        .music-toggle.active,
+        .voice-toggle.active {
             background: var(--secondary);
             color: var(--dark);
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+        }
+
+        .voice-toggle.unsupported {
+            opacity: 0.55;
+            cursor: not-allowed;
         }
 
         .main-stats-display {
@@ -2791,6 +2798,7 @@
         .form-group select,
         .mode-toggle,
         .music-toggle,
+        .voice-toggle,
         .map-overlay,
         .secondary-stat,
         .summary-stat,
@@ -3008,12 +3016,14 @@
             border-color: rgba(255, 216, 77, 0.72);
         }
 
-        .music-toggle {
+        .music-toggle,
+        .voice-toggle {
             border-color: rgba(0, 120, 111, 0.45);
             color: #0f786f;
         }
 
         .music-toggle.active,
+        .voice-toggle.active,
         .pace-zone.active {
             box-shadow: 0 0 10px rgba(0, 212, 192, 0.24);
         }
@@ -3444,7 +3454,8 @@
             }
 
             .mode-toggle,
-            .music-toggle {
+            .music-toggle,
+            .voice-toggle {
                 padding: 8px 10px;
                 font-size: 7px;
             }

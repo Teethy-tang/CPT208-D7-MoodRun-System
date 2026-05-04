@@ -41,6 +41,7 @@ export const useMoodRunStore = defineStore('moodRun', {
       avatar: savedAvatar,
       avatarDraft: { ...savedAvatar },
       musicEnabled: true,
+      voiceEnabled: true,
       runTestMode: false,
       runSession: null,
       runSaved: false,

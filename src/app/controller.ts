@@ -23,6 +23,17 @@ import {
   startRunTracking,
 } from '../features/run-session/runTracker';
 import { createRouteSetupMap, type RouteSetupMapHandle } from '../features/run-session/routeSetupMap';
+import { createVoiceAssistant } from '../features/voice-assistant/voiceAssistant';
+import {
+  getCheckpointVoice,
+  getCompletionVoice,
+  getGpsStatusVoice,
+  getMetricsVoice,
+  getMoodVoiceStyle,
+  getPaceFeedbackVoice,
+  getRouteGuidanceVoice,
+  getRunStartVoice,
+} from '../features/voice-assistant/voiceScripts';
 import { defaultPageByRoute, pageRouteMap } from './router';
 import { useMoodRunStore } from './stores/moodRun';
 import { loadRunHistory, saveRunHistory } from '../services/storage/runHistory';
@@ -83,6 +94,7 @@ export interface MoodRunController {
   saveCustomPlan: () => Promise<void>;
   startRun: () => Promise<void>;
   toggleMusic: () => void;
+  toggleVoice: () => void;
   toggleRunTestMode: () => Promise<void>;
   stopRun: () => Promise<void>;
   finishRun: () => Promise<void>;
@@ -95,6 +107,7 @@ export interface MoodRunController {
   randomizeAvatar: () => void;
   saveAvatarChoice: () => Promise<void>;
   renderRunModeToggle: () => void;
+  renderVoiceToggle: () => void;
   selectSound: (sound: string) => void;
 }
 
@@ -130,6 +143,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   let routeSetupMap: RouteSetupMapHandle | null = null;
   let routePointSuggestions: Record<RoutePointKind, RoutePlanPoint[]> = { start: [], end: [] };
   let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
+  const voiceAssistant = createVoiceAssistant();
 
   async function init() {
     if (initialized) return;
@@ -140,12 +154,14 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     initNavGlow(document.querySelector('.bottom-nav') as HTMLElement | null);
     renderCurrentAvatar();
     renderRunModeToggle();
+    renderVoiceToggle();
     window.app = controller;
 
     await syncRoute();
 
     window.addEventListener('beforeunload', () => {
       if (state.runSession) state.runSession.stop();
+      voiceAssistant.stop();
       stopBreathing();
       stopPixelFireworks();
     });
@@ -737,11 +753,71 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       if (text) text.textContent = 'ON';
     }
     renderRunModeToggle();
+    renderVoiceToggle();
+
+    voiceAssistant.resetMemory();
+    voiceAssistant.setEnabled(state.voiceEnabled);
+    speakRunVoice(
+      getRunStartVoice({
+        mood: state.currentMood || 'neutral',
+        planName: activePlan.name,
+        targetDistanceKm: activePlan.targetDistance,
+      }),
+      { force: true, interrupt: true, key: 'run-start', minIntervalMs: 0 },
+    );
 
     state.runSession = startRunTracking(state, {
-      onCheckpoint: showCelebration,
+      onCheckpoint: (text, checkpointIndex) => {
+        showCelebration(text);
+
+        const mood = state.currentMood || 'neutral';
+        const isComplete = text === 'TARGET COMPLETE!';
+        const voiceText = isComplete ? getCompletionVoice(mood) : getCheckpointVoice(mood, checkpointIndex, text);
+
+        speakRunVoice(voiceText, {
+          force: isComplete,
+          interrupt: isComplete,
+          key: isComplete ? 'run-complete' : `checkpoint-${checkpointIndex}`,
+          minIntervalMs: 0,
+        });
+      },
       onComplete: () => {
         void finishRun();
+      },
+      onMetricsMilestone: (milestone) => {
+        const milestoneId =
+          milestone.type === 'distance' ? Math.floor(milestone.distanceKm) : Math.floor(milestone.elapsedSec / 300);
+
+        speakRunVoice(getMetricsVoice({ ...milestone, mood: state.currentMood || 'neutral' }), {
+          key: `metrics-${milestone.type}-${milestoneId}`,
+          minIntervalMs: 0,
+        });
+      },
+      onPaceFeedback: (feedback) => {
+        const mood = state.currentMood || 'neutral';
+
+        speakRunVoice(getPaceFeedbackVoice({ ...feedback, mood }), {
+          interrupt: feedback.status === 'tooFast' && mood === 'angry',
+          key: `pace-${feedback.status}`,
+          minIntervalMs: feedback.status === 'onTarget' ? 120000 : 90000,
+        });
+      },
+      onRouteGuidance: ({ detail, title, tone }) => {
+        speakRunVoice(getRouteGuidanceVoice(title, detail), {
+          interrupt: tone === 'offroute',
+          key: `route-${title}`,
+          minIntervalMs: tone === 'offroute' ? 45000 : 60000,
+        });
+      },
+      onStatus: ({ message, tone }) => {
+        const voiceText = getGpsStatusVoice(message, tone);
+        if (!voiceText) return;
+
+        speakRunVoice(voiceText, {
+          interrupt: tone === 'warning',
+          key: `gps-${tone}-${voiceText}`,
+          minIntervalMs: tone === 'ready' ? 900000 : 60000,
+        });
       },
     });
   }
@@ -755,6 +831,36 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     button.classList.toggle('active', state.musicEnabled);
     const label = button.querySelector('span:last-child');
     if (label) label.textContent = state.musicEnabled ? 'ON' : 'OFF';
+  }
+
+  function toggleVoice() {
+    if (!voiceAssistant.isSupported()) {
+      state.voiceEnabled = false;
+      renderVoiceToggle();
+      return;
+    }
+
+    state.voiceEnabled = !state.voiceEnabled;
+    voiceAssistant.setEnabled(state.voiceEnabled);
+    renderVoiceToggle();
+
+    if (state.voiceEnabled) {
+      speakRunVoice('Voice coach is on.', {
+        force: true,
+        interrupt: true,
+        key: 'voice-on',
+        minIntervalMs: 0,
+      });
+    }
+  }
+
+  function speakRunVoice(text: string, options: Parameters<typeof voiceAssistant.speak>[1] = {}) {
+    const mood = state.currentMood || 'neutral';
+
+    return voiceAssistant.speak(text, {
+      ...getMoodVoiceStyle(mood),
+      ...options,
+    });
   }
 
   async function toggleRunTestMode() {
@@ -772,6 +878,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   }
 
   async function stopRun() {
+    voiceAssistant.stop();
     await finishRun();
   }
 
@@ -969,6 +1076,23 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     );
   }
 
+  function renderVoiceToggle() {
+    const voiceToggle = document.getElementById('voiceToggle');
+    if (!voiceToggle) return;
+
+    const supported = voiceAssistant.isSupported();
+    const active = supported && state.voiceEnabled;
+    voiceToggle.classList.toggle('active', active);
+    voiceToggle.classList.toggle('unsupported', !supported);
+    voiceToggle.setAttribute(
+      'aria-label',
+      supported ? (active ? 'Turn voice coach off' : 'Turn voice coach on') : 'Voice coach is unavailable in this browser',
+    );
+
+    const label = voiceToggle.querySelector('span:last-child');
+    if (label) label.textContent = supported ? (active ? 'ON' : 'OFF') : 'N/A';
+  }
+
   const controller: MoodRunController = {
     init,
     syncRoute,
@@ -1000,6 +1124,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     saveCustomPlan,
     startRun,
     toggleMusic,
+    toggleVoice,
     toggleRunTestMode,
     stopRun,
     finishRun,
@@ -1012,6 +1137,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     randomizeAvatar: randomizeAvatarChoice,
     saveAvatarChoice,
     renderRunModeToggle,
+    renderVoiceToggle,
     selectSound,
   };
 

@@ -82,6 +82,7 @@ export interface RunRecord {
   calories: number;
   plan: string | null;
   planName: string | null;
+  voiceEnabled?: boolean;
   moodAfter?: string;
   moodInsight?: string;
 }
@@ -157,6 +158,7 @@ export interface MoodRunState {
   avatar: AvatarConfig;
   avatarDraft: AvatarConfig;
   musicEnabled: boolean;
+  voiceEnabled: boolean;
   runTestMode: boolean;
   runSession: RunSessionHandle | null;
   runSaved: boolean;
