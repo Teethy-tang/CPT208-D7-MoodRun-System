@@ -23,6 +23,7 @@ export type PageId =
   | 'summaryPage'
   | 'wisdomPage'
   | 'profilePage'
+  | 'profileEditPage'
   | 'avatarPage';
 
 export type MeditationSound = 'rain' | 'ocean' | 'forest' | 'wind';
@@ -144,6 +145,12 @@ export interface AvatarConfig {
   accessory: string;
 }
 
+export interface UserProfile {
+  nickname: string;
+  age: number;
+  runningLevel: string;
+}
+
 export interface RunSessionHandle {
   stop: () => void;
 }
@@ -160,6 +167,7 @@ export interface MoodRunState {
   runData: RunData;
   runHistory: RunRecord[];
   lastMoodShift: MoodOutcome | null;
+  profile: UserProfile;
   avatar: AvatarConfig;
   avatarDraft: AvatarConfig;
   voiceControlEnabled: boolean;

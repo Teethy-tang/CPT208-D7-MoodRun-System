@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { loadAvatar } from '../../features/profile/avatar';
 import { loadRunMapMode } from '../../features/run-session/runMapSettings';
 import { loadRunHistory } from '../../services/storage/runHistory';
+import { loadUserProfile } from '../../services/storage/userProfile';
 import type { CustomPlan, MoodOutcome, MoodRunState, RunData } from '../../types/moodrun';
 
 function createInitialRunData(): RunData {
@@ -26,6 +27,7 @@ function createInitialRunData(): RunData {
 export const useMoodRunStore = defineStore('moodRun', {
   state: (): MoodRunState => {
     const savedAvatar = loadAvatar();
+    const savedProfile = loadUserProfile();
 
     return {
       currentPageId: 'homePage',
@@ -39,6 +41,7 @@ export const useMoodRunStore = defineStore('moodRun', {
       runData: createInitialRunData(),
       runHistory: loadRunHistory(),
       lastMoodShift: null as MoodOutcome | null,
+      profile: savedProfile,
       avatar: savedAvatar,
       avatarDraft: { ...savedAvatar },
       voiceControlEnabled: false,

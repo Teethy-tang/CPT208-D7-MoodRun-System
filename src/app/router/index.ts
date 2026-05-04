@@ -19,6 +19,7 @@ export const pageRouteMap: Record<PageId, RouteGroupName> = {
   summaryPage: 'summary',
   wisdomPage: 'summary',
   profilePage: 'profile',
+  profileEditPage: 'profile',
   avatarPage: 'profile',
 };
 

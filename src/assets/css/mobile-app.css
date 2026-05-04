@@ -276,6 +276,7 @@ button,
 .thought-review,
 .book-container,
 .profile-header,
+.profile-edit-panel,
 .profile-stat,
 .history-item,
 .avatar-preview-panel,
@@ -929,12 +930,16 @@ button,
     text-align: center;
   }
 
-  .profile-info h3 {
+  .profile-name-button {
     font-size: 13px;
   }
 
   .profile-details {
     justify-content: center;
+  }
+
+  .profile-edit-actions {
+    flex-direction: column-reverse;
   }
 }
 

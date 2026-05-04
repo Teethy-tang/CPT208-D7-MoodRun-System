@@ -45,6 +45,7 @@ import { parseVoiceRunCommand, type VoiceRunCommand } from '../features/voice-as
 import { defaultPageByRoute, pageRouteMap } from './router';
 import { useMoodRunStore } from './stores/moodRun';
 import { loadRunHistory, saveRunHistory } from '../services/storage/runHistory';
+import { normalizeUserProfile, saveUserProfile } from '../services/storage/userProfile';
 import {
   initCursorGlow,
   initGravityGrid,
@@ -89,6 +90,9 @@ export interface MoodRunController {
   goToMeditation: () => Promise<void>;
   goToAvatar: () => Promise<void>;
   goToProfile: () => Promise<void>;
+  goToProfileEdit: () => Promise<void>;
+  cancelProfileEdit: () => Promise<void>;
+  saveProfileDetails: () => Promise<void>;
   goToWisdom: () => Promise<void>;
   selectMood: (mood: MoodId) => void;
   updateRecommendedPlan: () => void;
@@ -202,6 +206,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       renderCurrentAvatar();
       if (targetPage === 'profilePage') {
         updateProfile();
+      }
+      if (targetPage === 'profileEditPage') {
+        renderProfileEditor();
       }
       if (targetPage === 'avatarPage') {
         renderAvatarStudio();
@@ -428,6 +435,15 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     updateNav('profile');
     renderCurrentAvatar();
     updateProfile();
+  }
+
+  async function goToProfileEdit() {
+    await showPage('profileEditPage');
+    renderProfileEditor();
+  }
+
+  async function cancelProfileEdit() {
+    await goToProfile();
   }
 
   async function goToWisdom() {
@@ -1219,6 +1235,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     const totalRunsElement = document.getElementById('totalRuns');
     const totalDistanceElement = document.getElementById('totalDistance');
 
+    renderProfileDetails();
     if (totalRunsElement) totalRunsElement.textContent = String(totalRuns);
     if (totalDistanceElement) totalDistanceElement.textContent = totalDist.toFixed(1);
     if (!historyList) return;
@@ -1250,6 +1267,42 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
             `;
       historyList.appendChild(item);
     });
+  }
+
+  function renderProfileDetails() {
+    const nickname = document.getElementById('profileNickname');
+    const age = document.getElementById('profileAge');
+    const runningLevel = document.getElementById('profileRunningLevel');
+
+    if (nickname) nickname.textContent = state.profile.nickname;
+    if (age) age.textContent = `AGE: ${state.profile.age}`;
+    if (runningLevel) runningLevel.textContent = state.profile.runningLevel;
+  }
+
+  function renderProfileEditor() {
+    const nicknameInput = document.getElementById('profileNicknameInput') as HTMLInputElement | null;
+    const ageInput = document.getElementById('profileAgeInput') as HTMLInputElement | null;
+    const levelInput = document.getElementById('profileLevelInput') as HTMLSelectElement | null;
+
+    if (nicknameInput) nicknameInput.value = state.profile.nickname;
+    if (ageInput) ageInput.value = String(state.profile.age);
+    if (levelInput) levelInput.value = state.profile.runningLevel;
+
+    window.setTimeout(() => nicknameInput?.focus(), 60);
+  }
+
+  async function saveProfileDetails() {
+    const nicknameInput = document.getElementById('profileNicknameInput') as HTMLInputElement | null;
+    const ageInput = document.getElementById('profileAgeInput') as HTMLInputElement | null;
+    const levelInput = document.getElementById('profileLevelInput') as HTMLSelectElement | null;
+
+    state.profile = normalizeUserProfile({
+      nickname: nicknameInput?.value,
+      age: Number(ageInput?.value),
+      runningLevel: levelInput?.value,
+    });
+    saveUserProfile(state.profile);
+    await goToProfile();
   }
 
   function renderCurrentAvatar() {
@@ -1376,6 +1429,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     goToMeditation,
     goToAvatar,
     goToProfile,
+    goToProfileEdit,
+    cancelProfileEdit,
+    saveProfileDetails,
     goToWisdom,
     selectMood,
     updateRecommendedPlan,
