@@ -42,6 +42,7 @@ export interface CustomPlan {
 
 export type RoutePlanSource = 'map' | 'manual' | 'random';
 export type RouteDistanceMode = 'plan' | 'route';
+export type RunMapMode = 'mood' | 'classic';
 
 export interface RoutePlanPoint {
   latitude: number;
@@ -167,6 +168,7 @@ export interface MoodRunState {
   meditationAudioEnabled: boolean;
   meditationVolume: number;
   voiceEnabled: boolean;
+  runMapMode: RunMapMode;
   runSession: RunSessionHandle | null;
   runSaved: boolean;
 }

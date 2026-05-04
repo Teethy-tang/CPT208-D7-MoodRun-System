@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { loadAvatar } from '../../features/profile/avatar';
+import { loadRunMapMode } from '../../features/run-session/runMapSettings';
 import { loadRunHistory } from '../../services/storage/runHistory';
 import type { CustomPlan, MoodOutcome, MoodRunState, RunData } from '../../types/moodrun';
 
@@ -46,6 +47,7 @@ export const useMoodRunStore = defineStore('moodRun', {
       meditationAudioEnabled: false,
       meditationVolume: 0.65,
       voiceEnabled: true,
+      runMapMode: loadRunMapMode(),
       runSession: null,
       runSaved: false,
     };

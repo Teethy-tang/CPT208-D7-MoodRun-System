@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
 import { getMoodRunController } from '../app/controller';
+import type { RunMapMode } from '../types/moodrun';
 
 const app = getMoodRunController();
 const isMapExpanded = ref(false);
 const isMapClosing = ref(false);
+const selectedMapMode = ref<RunMapMode>(app.getRunMapMode());
+
+function toggleMapMode() {
+  selectedMapMode.value = app.selectRunMapMode(selectedMapMode.value === 'mood' ? 'classic' : 'mood');
+}
 
 async function toggleMapExpansion() {
   if (isMapExpanded.value) {
@@ -67,12 +73,25 @@ async function toggleMapExpansion() {
       <div
         class="map-container"
         :class="{ 'map-container-expanded': isMapExpanded, 'map-container-collapsing': isMapClosing }"
+        :data-map-mode="selectedMapMode"
       >
         <div class="run-map-canvas" id="runLiveMap" aria-label="Live run map"></div>
         <div class="run-map-message" id="runMapMessage" aria-live="polite">LIVE MAP LOADING...</div>
         <div class="map-overlay">
           <span id="routePointCount">0 PTS</span>
           <span id="gpsQualityLabel">SEARCHING</span>
+        </div>
+        <div class="map-mode-switch">
+          <button
+            class="map-mode-button"
+            type="button"
+            :data-map-mode="selectedMapMode"
+            :aria-label="selectedMapMode === 'mood' ? 'Switch to classic map' : 'Switch to mood map'"
+            @click="toggleMapMode"
+          >
+            <span class="map-mode-dot" aria-hidden="true"></span>
+            <span>{{ selectedMapMode === 'mood' ? 'MOOD' : 'CLASSIC' }}</span>
+          </button>
         </div>
         <div class="route-guidance-pill" id="routeGuidancePill" data-tone="info" hidden>
           <span id="routeGuidanceTitle">ROUTE GUIDE</span>

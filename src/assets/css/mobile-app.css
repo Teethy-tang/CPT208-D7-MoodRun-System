@@ -379,6 +379,15 @@ button,
   border-radius: var(--app-control-radius);
 }
 
+.map-mode-switch {
+  max-width: calc(100% - 104px);
+}
+
+.map-mode-button {
+  min-height: 27px;
+  padding: 7px 8px;
+}
+
 .map-container-expanded {
   position: fixed;
   inset:
@@ -489,6 +498,10 @@ button,
   margin-top: auto;
   border: 0;
   border-radius: var(--app-control-radius);
+}
+
+.running-page[data-run-mood] .stop-btn {
+  border: 2px solid color-mix(in srgb, var(--run-map-route-color) 74%, #ffffff);
 }
 
 .summary-page {
@@ -1015,6 +1028,7 @@ button,
   .sound-option:hover,
   .history-item:hover,
   .avatar-option:hover,
+  .map-mode-button:hover,
   .map-expand-toggle:hover,
   .stop-btn:hover {
     transform: none;

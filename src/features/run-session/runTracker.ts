@@ -69,7 +69,11 @@ export function startRunTracking(
   const checkpoints = moodCheckpoints[state.currentMood || 'neutral'];
   const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
   const emotionalState = createEmotionalStateEngine({ paceRange: plan.paceRange });
-  const liveMap = createRunMap();
+  const liveMap = createRunMap('runLiveMap', 'runMapMessage', {
+    avatar: state.avatar,
+    mode: state.runMapMode,
+    mood: state.currentMood,
+  });
   let nextCheckpointIndex = 0;
   let nextDistanceMilestoneKm = 1;
   let nextTimeMilestoneSec = 300;

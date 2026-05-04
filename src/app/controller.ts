@@ -24,6 +24,7 @@ import {
   startRunTracking,
 } from '../features/run-session/runTracker';
 import { createRunningMusic } from '../features/run-session/runningMusic';
+import { normalizeRunMapMode, RUN_MAP_MODE_CHANGE_EVENT, saveRunMapMode } from '../features/run-session/runMapSettings';
 import { createRouteSetupMap, type RouteSetupMapHandle } from '../features/run-session/routeSetupMap';
 import { createVoiceAssistant } from '../features/voice-assistant/voiceAssistant';
 import {
@@ -66,6 +67,7 @@ import type {
   RouteDistanceMode,
   RouteGroupName,
   RoutePlanPoint,
+  RunMapMode,
 } from '../types/moodrun';
 
 type MoodRunStore = ReturnType<typeof useMoodRunStore>;
@@ -117,6 +119,8 @@ export interface MoodRunController {
   saveAvatarChoice: () => Promise<void>;
   renderVoiceToggle: () => void;
   renderVoiceControlToggle: () => void;
+  getRunMapMode: () => RunMapMode;
+  selectRunMapMode: (mode: RunMapMode) => RunMapMode;
   selectSound: (sound: MeditationSound) => Promise<void>;
 }
 
@@ -401,6 +405,17 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     const isPlaying = await meditationAudio.play(sound, state.meditationVolume);
     state.meditationAudioEnabled = isPlaying;
     renderMeditationSoundState();
+  }
+
+  function getRunMapMode() {
+    return state.runMapMode;
+  }
+
+  function selectRunMapMode(mode: RunMapMode) {
+    state.runMapMode = normalizeRunMapMode(mode);
+    saveRunMapMode(state.runMapMode);
+    window.dispatchEvent(new CustomEvent(RUN_MAP_MODE_CHANGE_EVENT, { detail: { mode: state.runMapMode } }));
+    return state.runMapMode;
   }
 
   async function goToAvatar() {
@@ -1396,6 +1411,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     saveAvatarChoice,
     renderVoiceToggle,
     renderVoiceControlToggle,
+    getRunMapMode,
+    selectRunMapMode,
     selectSound,
   };
 

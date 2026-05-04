@@ -1,5 +1,7 @@
-import type { PlannedRoute, PositionLike, TrackingResult } from '../../types/moodrun';
+import type { AvatarConfig, MoodId, PlannedRoute, PositionLike, RunMapMode, TrackingResult } from '../../types/moodrun';
+import { createAvatarSvg } from '../profile/avatar';
 import { wgs84ToGcj02 } from './coordTransform';
+import { normalizeRunMapMode, RUN_MAP_MODE_CHANGE_EVENT } from './runMapSettings';
 
 declare global {
   interface Window {
@@ -23,9 +25,221 @@ interface SyncOptions {
   accuracy: number | null;
 }
 
+interface RunMapOptions {
+  avatar?: Partial<AvatarConfig>;
+  mode?: RunMapMode;
+  mood?: MoodId | null;
+}
+
+interface RunMapTheme {
+  accuracyColor: string;
+  avatarStrideMs: number;
+  features: string[];
+  glowColor: string;
+  gridColor: string;
+  mapStyle: string;
+  plannedColor: string;
+  plannedOpacity: number;
+  plannedStyle: 'dashed' | 'solid';
+  plannedWeight: number;
+  routeColor: string;
+  routeOpacity: number;
+  routeWeight: number;
+  showLabels: boolean;
+  tone: MoodId | 'classic';
+  washColor: string;
+}
+
+const CLASSIC_FEATURES = ['bg', 'point', 'road', 'building'];
+const MOOD_FEATURES = ['bg', 'road'];
+
 let amapPromise: Promise<any> | null = null;
 
-export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMessage') {
+const classicMapTheme: RunMapTheme = {
+  accuracyColor: '#4f7eff',
+  avatarStrideMs: 620,
+  features: CLASSIC_FEATURES,
+  glowColor: 'rgba(79, 126, 255, 0.2)',
+  gridColor: 'rgba(79, 126, 255, 0.08)',
+  mapStyle: 'amap://styles/normal',
+  plannedColor: '#00b9aa',
+  plannedOpacity: 0.88,
+  plannedStyle: 'solid',
+  plannedWeight: 6,
+  routeColor: '#4f7eff',
+  routeOpacity: 0.95,
+  routeWeight: 5,
+  showLabels: true,
+  tone: 'classic',
+  washColor: 'rgba(253, 251, 246, 0)',
+};
+
+const moodMapThemes: Record<MoodId, RunMapTheme> = {
+  stressed: {
+    accuracyColor: '#8fd7cf',
+    avatarStrideMs: 720,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(213, 132, 164, 0.26)',
+    gridColor: 'rgba(143, 215, 207, 0.1)',
+    mapStyle: 'amap://styles/whitesmoke',
+    plannedColor: '#8fd7cf',
+    plannedOpacity: 0.54,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#d584a4',
+    routeOpacity: 0.92,
+    routeWeight: 7,
+    showLabels: false,
+    tone: 'stressed',
+    washColor: 'rgba(255, 238, 246, 0.34)',
+  },
+  anxious: {
+    accuracyColor: '#80d8d1',
+    avatarStrideMs: 760,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(128, 216, 209, 0.3)',
+    gridColor: 'rgba(143, 123, 255, 0.08)',
+    mapStyle: 'amap://styles/whitesmoke',
+    plannedColor: '#9d93ea',
+    plannedOpacity: 0.5,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#48bdb5',
+    routeOpacity: 0.92,
+    routeWeight: 7,
+    showLabels: false,
+    tone: 'anxious',
+    washColor: 'rgba(232, 252, 249, 0.38)',
+  },
+  tired: {
+    accuracyColor: '#b7f0dc',
+    avatarStrideMs: 860,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(126, 136, 168, 0.22)',
+    gridColor: 'rgba(183, 240, 220, 0.08)',
+    mapStyle: 'amap://styles/whitesmoke',
+    plannedColor: '#b7f0dc',
+    plannedOpacity: 0.46,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#7e88a8',
+    routeOpacity: 0.86,
+    routeWeight: 6,
+    showLabels: false,
+    tone: 'tired',
+    washColor: 'rgba(247, 244, 232, 0.42)',
+  },
+  angry: {
+    accuracyColor: '#ffb347',
+    avatarStrideMs: 520,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(255, 77, 95, 0.34)',
+    gridColor: 'rgba(255, 179, 71, 0.12)',
+    mapStyle: 'amap://styles/macaron',
+    plannedColor: '#ffb347',
+    plannedOpacity: 0.58,
+    plannedStyle: 'dashed',
+    plannedWeight: 5,
+    routeColor: '#ff4d5f',
+    routeOpacity: 0.98,
+    routeWeight: 8,
+    showLabels: false,
+    tone: 'angry',
+    washColor: 'rgba(255, 238, 230, 0.34)',
+  },
+  sad: {
+    accuracyColor: '#9beee6',
+    avatarStrideMs: 880,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(79, 126, 255, 0.22)',
+    gridColor: 'rgba(155, 238, 230, 0.08)',
+    mapStyle: 'amap://styles/whitesmoke',
+    plannedColor: '#9beee6',
+    plannedOpacity: 0.48,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#5f83db',
+    routeOpacity: 0.86,
+    routeWeight: 6,
+    showLabels: false,
+    tone: 'sad',
+    washColor: 'rgba(237, 244, 255, 0.42)',
+  },
+  bored: {
+    accuracyColor: '#ffd84d',
+    avatarStrideMs: 640,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(255, 216, 77, 0.26)',
+    gridColor: 'rgba(138, 146, 173, 0.1)',
+    mapStyle: 'amap://styles/macaron',
+    plannedColor: '#8a92ad',
+    plannedOpacity: 0.5,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#ffd84d',
+    routeOpacity: 0.95,
+    routeWeight: 7,
+    showLabels: false,
+    tone: 'bored',
+    washColor: 'rgba(255, 250, 221, 0.34)',
+  },
+  excited: {
+    accuracyColor: '#ff7fca',
+    avatarStrideMs: 500,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(255, 216, 77, 0.36)',
+    gridColor: 'rgba(255, 127, 202, 0.12)',
+    mapStyle: 'amap://styles/macaron',
+    plannedColor: '#ff7fca',
+    plannedOpacity: 0.58,
+    plannedStyle: 'dashed',
+    plannedWeight: 5,
+    routeColor: '#ffd84d',
+    routeOpacity: 0.98,
+    routeWeight: 8,
+    showLabels: false,
+    tone: 'excited',
+    washColor: 'rgba(255, 250, 221, 0.38)',
+  },
+  happy: {
+    accuracyColor: '#79e1d6',
+    avatarStrideMs: 600,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(249, 147, 190, 0.3)',
+    gridColor: 'rgba(121, 225, 214, 0.1)',
+    mapStyle: 'amap://styles/macaron',
+    plannedColor: '#79e1d6',
+    plannedOpacity: 0.54,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#f993be',
+    routeOpacity: 0.95,
+    routeWeight: 7,
+    showLabels: false,
+    tone: 'happy',
+    washColor: 'rgba(255, 246, 251, 0.36)',
+  },
+  neutral: {
+    accuracyColor: '#79e1d6',
+    avatarStrideMs: 620,
+    features: MOOD_FEATURES,
+    glowColor: 'rgba(143, 160, 196, 0.24)',
+    gridColor: 'rgba(121, 225, 214, 0.1)',
+    mapStyle: 'amap://styles/macaron',
+    plannedColor: '#79e1d6',
+    plannedOpacity: 0.52,
+    plannedStyle: 'dashed',
+    plannedWeight: 4,
+    routeColor: '#f993be',
+    routeOpacity: 0.94,
+    routeWeight: 7,
+    showLabels: false,
+    tone: 'neutral',
+    washColor: 'rgba(246, 249, 255, 0.36)',
+  },
+};
+
+export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMessage', options: RunMapOptions = {}) {
   let map: any = null;
   let polyline: any = null;
   let plannedPolyline: any = null;
@@ -42,12 +256,25 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
   let currentAccuracy: number | null = null;
   let pendingViewportSync = true;
   let destroyed = false;
+  let activeMode = normalizeRunMapMode(options.mode);
+  const activeMood = options.mood || 'neutral';
+  const avatar = options.avatar || {};
   const handleMapResize = () => {
     if (!map || destroyed) return;
 
     map.resize();
     render();
   };
+  const handleModeChange = (event: Event) => {
+    const nextMode = normalizeRunMapMode((event as CustomEvent<{ mode?: RunMapMode }>).detail?.mode);
+    if (nextMode === activeMode) return;
+
+    activeMode = nextMode;
+    pendingViewportSync = true;
+    void rebuildMapForMode();
+  };
+
+  window.addEventListener(RUN_MAP_MODE_CHANGE_EVENT, handleModeChange);
 
   async function reset(plannedRoute: PlannedRoute | null = null) {
     destroyed = false;
@@ -89,17 +316,8 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     destroyed = true;
     initPromise = null;
     window.removeEventListener('moodrun:map-resize', handleMapResize);
-    if (map) {
-      map.destroy();
-      map = null;
-    }
-    polyline = null;
-    plannedPolyline = null;
-    plannedStartMarker = null;
-    plannedEndMarker = null;
-    startMarker = null;
-    currentMarker = null;
-    accuracyCircle = null;
+    window.removeEventListener(RUN_MAP_MODE_CHANGE_EVENT, handleModeChange);
+    disposeMapInstance();
   }
 
   async function renderAsync() {
@@ -109,6 +327,36 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     } catch (error) {
       reportMapError(error);
     }
+  }
+
+  async function rebuildMapForMode() {
+    setMessage('LIVE MAP LOADING...');
+    disposeMapInstance();
+
+    try {
+      await ensureMapReady();
+      render();
+    } catch (error) {
+      reportMapError(error);
+    }
+  }
+
+  function disposeMapInstance() {
+    initPromise = null;
+    window.removeEventListener('moodrun:map-resize', handleMapResize);
+
+    if (map) {
+      map.destroy();
+      map = null;
+    }
+
+    polyline = null;
+    plannedPolyline = null;
+    plannedStartMarker = null;
+    plannedEndMarker = null;
+    startMarker = null;
+    currentMarker = null;
+    accuracyCircle = null;
   }
 
   async function ensureMapReady() {
@@ -131,17 +379,20 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
         map = new AMap.Map(container, {
           center: DEFAULT_CENTER,
           zoom: DEFAULT_ZOOM,
+          features: getActiveTheme().features,
+          mapStyle: getActiveTheme().mapStyle,
           resizeEnable: true,
           dragEnable: true,
           zoomEnable: true,
           doubleClickZoom: false,
           jogEnable: false,
+          showLabel: getActiveTheme().showLabels,
         });
 
         polyline = new AMap.Polyline({
-          strokeColor: '#f993be',
-          strokeWeight: 5,
-          strokeOpacity: 0.95,
+          strokeColor: getActiveTheme().routeColor,
+          strokeWeight: getActiveTheme().routeWeight,
+          strokeOpacity: getActiveTheme().routeOpacity,
           strokeStyle: 'solid',
           lineJoin: 'round',
           lineCap: 'round',
@@ -149,10 +400,10 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
         });
 
         plannedPolyline = new AMap.Polyline({
-          strokeColor: '#79e1d6',
-          strokeWeight: 6,
-          strokeOpacity: 0.88,
-          strokeStyle: 'solid',
+          strokeColor: getActiveTheme().plannedColor,
+          strokeWeight: getActiveTheme().plannedWeight,
+          strokeOpacity: getActiveTheme().plannedOpacity,
+          strokeStyle: getActiveTheme().plannedStyle,
           lineJoin: 'round',
           lineCap: 'round',
           showDir: true,
@@ -178,17 +429,17 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
         });
 
         currentMarker = new AMap.Marker({
-          content: '<div class="run-map-runner-pin" aria-hidden="true"></div>',
-          offset: new AMap.Pixel(-12, -12),
+          content: createRunnerMarkerContent(avatar),
+          offset: new AMap.Pixel(-21, -42),
           zIndex: 130,
         });
 
         accuracyCircle = new AMap.Circle({
           radius: 0,
-          strokeColor: '#79e1d6',
+          strokeColor: getActiveTheme().accuracyColor,
           strokeOpacity: 0.45,
           strokeWeight: 2,
-          fillColor: '#79e1d6',
+          fillColor: getActiveTheme().accuracyColor,
           fillOpacity: 0.12,
           bubble: true,
           zIndex: 90,
@@ -196,6 +447,7 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
 
         map.add([plannedPolyline, plannedStartMarker, plannedEndMarker, polyline, startMarker, currentMarker, accuracyCircle]);
         window.addEventListener('moodrun:map-resize', handleMapResize);
+        applyModeTheme();
         setMessage('');
       })();
     }
@@ -303,6 +555,69 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
     return [plannedPolyline, plannedStartMarker, plannedEndMarker];
   }
 
+  function applyModeTheme() {
+    const theme = getActiveTheme();
+    const moodTheme = moodMapThemes[activeMood];
+    const canvas = document.getElementById(containerId);
+    const frame = (canvas?.closest('.map-container') as HTMLElement | null) || null;
+    const page = (frame?.closest('.running-page') as HTMLElement | null) || null;
+
+    canvas?.setAttribute('data-run-map-mode', activeMode);
+    canvas?.setAttribute('data-run-map-mood', moodTheme.tone);
+    frame?.setAttribute('data-map-mood', moodTheme.tone);
+    page?.setAttribute('data-run-mood', moodTheme.tone);
+    applyMoodThemeVars(frame, moodTheme);
+    applyMoodThemeVars(page, moodTheme);
+    map?.setMapStyle?.(theme.mapStyle);
+    applyMapFeatures(theme);
+    applyMapStatus(theme);
+    polyline?.setOptions?.({
+      strokeColor: theme.routeColor,
+      strokeOpacity: theme.routeOpacity,
+      strokeWeight: theme.routeWeight,
+    });
+    plannedPolyline?.setOptions?.({
+      strokeColor: theme.plannedColor,
+      strokeOpacity: theme.plannedOpacity,
+      strokeStyle: theme.plannedStyle,
+      strokeWeight: theme.plannedWeight,
+    });
+    accuracyCircle?.setOptions?.({
+      fillColor: theme.accuracyColor,
+      strokeColor: theme.accuracyColor,
+    });
+  }
+
+  function applyMoodThemeVars(element: HTMLElement | null, theme: RunMapTheme) {
+    if (!element) return;
+
+    element.style.setProperty('--run-map-glow-color', theme.glowColor);
+    element.style.setProperty('--run-map-grid-color', theme.gridColor);
+    element.style.setProperty('--run-map-route-color', theme.routeColor);
+    element.style.setProperty('--run-map-stride-duration', `${theme.avatarStrideMs}ms`);
+    element.style.setProperty('--run-map-wash-color', theme.washColor);
+  }
+
+  function getActiveTheme() {
+    return activeMode === 'classic' ? classicMapTheme : moodMapThemes[activeMood];
+  }
+
+  function applyMapStatus(theme: RunMapTheme) {
+    try {
+      map?.setStatus?.({ showIndoorMap: activeMode === 'classic', showLabel: theme.showLabels });
+    } catch (error) {
+      console.warn('Could not update map status for run map mode.', error);
+    }
+  }
+
+  function applyMapFeatures(theme: RunMapTheme) {
+    try {
+      map?.setFeatures?.(theme.features);
+    } catch (error) {
+      console.warn('Could not update map features for run map mode.', error);
+    }
+  }
+
   function reportMapError(error: unknown) {
     console.warn('Could not initialize the live run map.', error);
     setMessage('LIVE MAP UNAVAILABLE');
@@ -330,6 +645,15 @@ function toGcjLngLat(position: PositionLike): LngLatTuple {
 
 function toLngLatTuple(point: PlannedRoute['start']): LngLatTuple {
   return [point.longitude, point.latitude];
+}
+
+function createRunnerMarkerContent(avatar: Partial<AvatarConfig>) {
+  return `
+        <div class="run-map-runner-avatar" aria-hidden="true">
+            <span class="run-map-runner-shadow"></span>
+            ${createAvatarSvg(avatar, 'pixel-avatar run-map-avatar-svg')}
+        </div>
+    `;
 }
 
 export async function loadAMap() {

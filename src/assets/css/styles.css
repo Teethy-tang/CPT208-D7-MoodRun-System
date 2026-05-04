@@ -1189,6 +1189,11 @@
 
         /* ===== 跑步中页面 - 重新设计 ===== */
         .running-page {
+            --run-map-glow-color: rgba(249, 147, 190, 0.26);
+            --run-map-grid-color: rgba(121, 225, 214, 0.1);
+            --run-map-route-color: #f993be;
+            --run-map-stride-duration: 620ms;
+            --run-map-wash-color: rgba(255, 246, 251, 0.34);
             padding: 20px;
             background: linear-gradient(180deg, var(--dark) 0%, rgba(22, 33, 62, 0.8) 100%);
         }
@@ -1217,12 +1222,18 @@
         }
 
         .map-container {
-            background: rgba(0, 0, 0, 0.5);
+            --run-map-glow-color: rgba(249, 147, 190, 0.26);
+            --run-map-grid-color: rgba(121, 225, 214, 0.1);
+            --run-map-route-color: #f993be;
+            --run-map-stride-duration: 620ms;
+            --run-map-wash-color: rgba(255, 246, 251, 0.34);
+            background:
+                linear-gradient(135deg, rgba(253, 251, 246, 0.92), rgba(246, 249, 255, 0.92));
             height: 230px;
             inset: 0 auto auto 0;
             position: relative;
             overflow: hidden;
-            border: 2px solid var(--text-muted);
+            border: 2px solid rgba(27, 35, 64, 0.38);
             border-radius: 16px;
             transform-origin: top center;
             transition:
@@ -1232,6 +1243,57 @@
                 transform 0.28s ease;
             width: 100%;
             z-index: 1;
+        }
+
+        .map-container::before,
+        .map-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s ease, background 0.28s ease;
+        }
+
+        .map-container::before {
+            z-index: 6;
+            background:
+                linear-gradient(180deg, var(--run-map-wash-color), transparent 54%),
+                linear-gradient(90deg, rgba(253, 251, 246, 0.2), transparent 46%, rgba(253, 251, 246, 0.18));
+            mix-blend-mode: multiply;
+        }
+
+        .map-container::after {
+            z-index: 7;
+            background-image:
+                linear-gradient(90deg, var(--run-map-grid-color) 1px, transparent 1px),
+                linear-gradient(var(--run-map-grid-color) 1px, transparent 1px);
+            background-size: 34px 34px;
+            mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+        }
+
+        .map-container[data-map-mode="mood"] {
+            background:
+                linear-gradient(135deg, rgba(253, 251, 246, 0.95), var(--run-map-wash-color));
+            border-color: color-mix(in srgb, var(--run-map-route-color) 72%, #ffffff);
+            box-shadow:
+                inset 0 0 0 2px var(--run-map-grid-color),
+                0 18px 38px var(--run-map-glow-color);
+        }
+
+        .map-container[data-map-mode="mood"]::before {
+            opacity: 0.78;
+        }
+
+        .map-container[data-map-mode="mood"]::after {
+            opacity: 0.72;
+        }
+
+        .map-container[data-map-mode="classic"] {
+            border-color: color-mix(in srgb, var(--run-map-route-color) 58%, rgba(27, 35, 64, 0.28));
+            box-shadow:
+                inset 0 0 0 1px var(--run-map-grid-color),
+                0 18px 34px var(--run-map-glow-color);
         }
 
         .map-container-expanded {
@@ -1247,6 +1309,21 @@
             left: 0;
             width: 100%;
             height: 100%;
+            background:
+                linear-gradient(90deg, rgba(121, 225, 214, 0.08) 1px, transparent 1px),
+                linear-gradient(rgba(249, 147, 190, 0.08) 1px, transparent 1px),
+                rgba(253, 251, 246, 0.78);
+            background-size: 28px 28px;
+        }
+
+        .run-map-canvas[data-run-map-mode="mood"] {
+            filter: saturate(0.72) contrast(0.9) brightness(1.08);
+            opacity: 0.88;
+        }
+
+        .run-map-canvas[data-run-map-mode="classic"] {
+            filter: none;
+            opacity: 1;
         }
 
         .run-map-message {
@@ -1271,15 +1348,88 @@
             position: absolute;
             top: 8px;
             left: 8px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(253, 251, 246, 0.9);
             padding: 4px 8px;
-            border: 1px solid var(--secondary);
+            border: 1px solid rgba(27, 35, 64, 0.24);
             display: inline-flex;
             gap: 10px;
             font-family: var(--font-pixel);
             font-size: 7px;
             z-index: 18;
             pointer-events: none;
+            color: var(--text-main);
+            box-shadow: 2px 2px 0 rgba(27, 35, 64, 0.12);
+        }
+
+        .map-mode-switch {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 19;
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            max-width: calc(100% - 118px);
+        }
+
+        .map-mode-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 25px;
+            border: 1px solid rgba(27, 35, 64, 0.22);
+            background: rgba(253, 251, 246, 0.86);
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: var(--font-pixel);
+            font-size: 6px;
+            line-height: 1;
+            min-width: 74px;
+            padding: 6px 8px;
+            box-shadow: 2px 2px 0 rgba(27, 35, 64, 0.1);
+            transition:
+                background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .map-mode-button:hover,
+        .map-mode-button:focus-visible {
+            background: var(--bg-base);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .map-mode-button[data-map-mode="mood"] {
+            border-color: color-mix(in srgb, var(--run-map-route-color) 62%, #ffffff);
+            box-shadow: 2px 2px 0 var(--run-map-glow-color);
+        }
+
+        .map-mode-button[data-map-mode="classic"] {
+            border-color: rgba(79, 126, 255, 0.58);
+            box-shadow: 2px 2px 0 rgba(79, 126, 255, 0.24);
+        }
+
+        .map-mode-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--run-map-route-color);
+            box-shadow: 0 0 0 2px var(--run-map-glow-color);
+            flex: 0 0 auto;
+        }
+
+        .map-mode-button[data-map-mode="classic"] .map-mode-dot {
+            background: #4f7eff;
+            box-shadow: 0 0 0 2px rgba(79, 126, 255, 0.18);
+        }
+
+        .map-container[data-map-mode="mood"] .map-overlay,
+        .map-container[data-map-mode="mood"] .map-mode-button,
+        .map-container[data-map-mode="mood"] .map-expand-toggle {
+            background: rgba(253, 251, 246, 0.74);
+            backdrop-filter: blur(6px);
         }
 
         .route-guidance-pill {
@@ -1388,6 +1538,70 @@
             animation: mapPulse 1.4s ease-out infinite;
         }
 
+        .run-map-runner-avatar {
+            position: relative;
+            display: block;
+            width: 42px;
+            height: 48px;
+            transform-origin: 50% 88%;
+            animation: runAvatarStride var(--run-map-stride-duration) steps(2, end) infinite;
+            filter: drop-shadow(3px 5px 0 rgba(27, 35, 64, 0.18));
+        }
+
+        .run-map-avatar-svg {
+            position: absolute;
+            top: 0;
+            left: 3px;
+            width: 36px;
+            height: 36px;
+            overflow: visible;
+            image-rendering: pixelated;
+        }
+
+        .run-map-runner-shadow {
+            position: absolute;
+            left: 9px;
+            bottom: 4px;
+            width: 24px;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(27, 35, 64, 0.24);
+            animation: runAvatarShadow var(--run-map-stride-duration) steps(2, end) infinite;
+        }
+
+        .map-container[data-map-mode="mood"] .run-map-start-pin {
+            background: var(--run-map-route-color);
+            box-shadow: 0 0 0 4px var(--run-map-glow-color);
+        }
+
+        .map-container[data-map-mode="mood"] .run-map-runner-avatar {
+            filter:
+                drop-shadow(3px 5px 0 rgba(27, 35, 64, 0.16))
+                drop-shadow(0 0 10px var(--run-map-glow-color));
+        }
+
+        @keyframes runAvatarStride {
+            0%, 100% {
+                transform: translateY(0) rotate(-2deg);
+            }
+
+            50% {
+                transform: translateY(-4px) rotate(2deg);
+            }
+        }
+
+        @keyframes runAvatarShadow {
+            0%, 100% {
+                transform: scaleX(1);
+                opacity: 0.42;
+            }
+
+            50% {
+                transform: scaleX(0.72);
+                opacity: 0.26;
+            }
+        }
+
         @keyframes mapPulse {
             0% {
                 transform: scale(0.7);
@@ -1419,6 +1633,19 @@
 
         .run-map-planned-end {
             background: var(--accent);
+        }
+
+        .map-container[data-map-mode="mood"] .run-map-planned-pin {
+            border-color: rgba(253, 251, 246, 0.92);
+            box-shadow: 0 4px 16px var(--run-map-glow-color);
+        }
+
+        .map-container[data-map-mode="mood"] .run-map-planned-start {
+            background: color-mix(in srgb, var(--run-map-route-color) 38%, var(--secondary));
+        }
+
+        .map-container[data-map-mode="mood"] .run-map-planned-end {
+            background: color-mix(in srgb, var(--run-map-route-color) 38%, var(--accent));
         }
 
         .running-title {
@@ -3054,6 +3281,61 @@
 
         .stop-btn:hover {
             box-shadow: inset 4px 4px 0px #8d4362;
+        }
+
+        .running-page[data-run-mood] .main-stats-display,
+        .running-page[data-run-mood] .secondary-stat,
+        .running-page[data-run-mood] .progress-container {
+            border-color: color-mix(in srgb, var(--run-map-route-color) 62%, rgba(27, 35, 64, 0.26));
+            box-shadow:
+                inset 0 0 0 2px var(--run-map-grid-color),
+                0 12px 26px var(--run-map-glow-color);
+        }
+
+        .running-page[data-run-mood] .music-toggle,
+        .running-page[data-run-mood] .voice-toggle,
+        .running-page[data-run-mood] .voice-control-toggle,
+        .running-page[data-run-mood] .pace-zone {
+            border-color: color-mix(in srgb, var(--run-map-route-color) 58%, rgba(27, 35, 64, 0.22));
+            box-shadow: 0 7px 18px color-mix(in srgb, var(--run-map-glow-color) 74%, transparent);
+        }
+
+        .running-page[data-run-mood] .music-toggle,
+        .running-page[data-run-mood] .voice-toggle,
+        .running-page[data-run-mood] .voice-control-toggle {
+            color: color-mix(in srgb, var(--run-map-route-color) 76%, var(--text-main));
+        }
+
+        .running-page[data-run-mood] .music-toggle.active,
+        .running-page[data-run-mood] .voice-toggle.active,
+        .running-page[data-run-mood] .voice-control-toggle.active,
+        .running-page[data-run-mood] .pace-zone.active {
+            background: color-mix(in srgb, var(--run-map-route-color) 20%, var(--panel-soft));
+            box-shadow:
+                inset 0 0 0 1px var(--run-map-grid-color),
+                0 0 16px var(--run-map-glow-color);
+        }
+
+        .running-page[data-run-mood] .main-stats-display::before {
+            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--run-map-route-color) 18%, transparent), transparent);
+        }
+
+        .running-page[data-run-mood] .progress-fill {
+            background: linear-gradient(90deg, var(--run-map-route-color), var(--accent));
+        }
+
+        .running-page[data-run-mood] .stop-btn {
+            border: 2px solid color-mix(in srgb, var(--run-map-route-color) 74%, #ffffff);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--run-map-route-color) 72%, var(--primary)), var(--primary));
+            box-shadow:
+                inset 0 0 0 2px color-mix(in srgb, var(--run-map-route-color) 28%, transparent),
+                0 14px 28px var(--run-map-glow-color);
+        }
+
+        .running-page[data-run-mood] .stop-btn:hover {
+            box-shadow:
+                inset 4px 4px 0 color-mix(in srgb, var(--run-map-route-color) 36%, #8d4362),
+                0 16px 34px var(--run-map-glow-color);
         }
 
         .celebration-toast {
