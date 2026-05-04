@@ -1930,6 +1930,10 @@
             animation: victoryPulse 1s ease-in-out infinite;
         }
 
+        .summary-page {
+            gap: 20px;
+        }
+
         @keyframes victoryPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -1939,7 +1943,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 0;
         }
 
         .summary-stat {
@@ -1991,11 +1995,43 @@
         }
 
         .mood-arc-card {
-            background: var(--panel-soft);
-            box-shadow: inset -3px -3px 0px #dbd3bc, inset -2px -2px 0px #ffffff;
-            border: 1px solid #C2B280;
+            background:
+                linear-gradient(var(--panel-soft), var(--panel-soft)) padding-box,
+                linear-gradient(90deg, var(--secondary), var(--accent), var(--primary), var(--secondary)) border-box;
+            background-size: 100% 100%, 240% 100%;
+            box-shadow:
+                inset -3px -3px 0px rgba(219, 211, 188, 0.76),
+                inset -2px -2px 0px #ffffff,
+                0 0 18px rgba(121, 225, 214, 0.24);
+            border: 1px solid transparent;
             padding: 22px;
-            margin-bottom: 30px;
+            margin-bottom: 0;
+            position: relative;
+            isolation: isolate;
+            animation: moodArcBorderFlow 5s linear infinite;
+        }
+
+        .mood-arc-card::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            z-index: -1;
+            background: linear-gradient(90deg, var(--secondary), var(--accent), var(--primary), var(--secondary));
+            background-size: 240% 100%;
+            border-radius: inherit;
+            filter: blur(10px);
+            opacity: 0.28;
+            animation: moodArcGlowFlow 5s linear infinite;
+        }
+
+        @keyframes moodArcBorderFlow {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 0 0, 240% 0; }
+        }
+
+        @keyframes moodArcGlowFlow {
+            0% { background-position: 0 0; }
+            100% { background-position: 240% 0; }
         }
 
         .mood-arc-heading {
@@ -2031,39 +2067,6 @@
             color: var(--text-muted);
             text-align: center;
             line-height: 1.4;
-        }
-
-        .calorie-analogy {
-            background: linear-gradient(135deg, rgba(255, 0, 85, 0.3), rgba(255, 238, 0, 0.2));
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            box-shadow: inset -3px -3px 0px #dbd3bc, inset -2px -2px 0px #ffffff;
-            border: 1px solid #C2B280;
-        }
-
-        .calorie-analogy::before {
-            content: '★';
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0 10px;
-            color: #dbd3bc;
-            font-size: 20px;
-        }
-
-        .calorie-analogy h3 {
-            font-family: var(--font-pixel);
-            font-size: 10px;
-            margin-bottom: 15px;
-        }
-
-        .calorie-analogy p {
-            font-size: 22px;
-            color: var(--accent);
-            text-shadow: 1px 1px 0px var(--primary);
         }
 
         .summary-continue-btn {
@@ -3057,7 +3060,6 @@
         }
 
         .recommended-plan,
-        .calorie-analogy,
         .profile-header,
         .book-container,
         .main-stats-display,
@@ -3323,6 +3325,13 @@
 
         .running-page[data-run-mood] .main-stats-display::before {
             background: linear-gradient(90deg, transparent, var(--run-map-grid-color), transparent);
+        }
+
+        .running-page[data-run-mood] .running-title {
+            color: var(--run-map-route-color);
+            text-shadow:
+                2px 2px 0 var(--run-map-planned-color),
+                0 0 12px var(--run-map-glow-color);
         }
 
         .running-page[data-run-mood] .secondary-stat-value,

@@ -1,7 +1,6 @@
 import { nextTick } from 'vue';
 import type { Router } from 'vue-router';
 import {
-  calorieAnalogies,
   moodOutcomes,
   moodPlans,
   moodProfiles,
@@ -1176,7 +1175,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     const summaryMoodAfter = document.getElementById('summaryMoodAfter');
     const summaryMoodInsight = document.getElementById('summaryMoodInsight');
     const summaryPlanName = document.getElementById('summaryPlanName');
-    const calorieAnalogy = document.getElementById('calorieAnalogy');
 
     if (summaryDistance) summaryDistance.textContent = `${state.runData.distance.toFixed(2)} KM`;
     if (summaryPace) summaryPace.textContent = `${formatPace(state.runData.averagePace ?? state.runData.pace)} /KM`;
@@ -1199,10 +1197,6 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       }
     }
 
-    const analogy =
-      calorieAnalogies.find((item) => state.runData.calories <= item.cal) ||
-      calorieAnalogies[calorieAnalogies.length - 1];
-    if (calorieAnalogy) calorieAnalogy.textContent = analogy.text;
     startPixelFireworks();
   }
 

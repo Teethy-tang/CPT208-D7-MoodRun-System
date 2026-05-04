@@ -34,10 +34,6 @@ const app = getMoodRunController();
       </div>
       <p id="summaryMoodInsight">A steady run gave the day a shape.</p>
     </div>
-    <div class="calorie-analogy">
-      <h3>CALORIES BURNED</h3>
-      <p id="calorieAnalogy">You earned a treat! Great job!</p>
-    </div>
     <button class="retro-btn summary-continue-btn" @click="app.goToWisdom()">CONTINUE</button>
   </div>
 

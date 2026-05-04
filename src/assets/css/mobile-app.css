@@ -273,7 +273,6 @@ button,
 .route-control-card,
 .summary-stat,
 .mood-arc-card,
-.calorie-analogy,
 .thought-review,
 .book-container,
 .profile-header,
@@ -505,7 +504,7 @@ button,
 }
 
 .summary-page {
-  gap: 16px;
+  gap: 12px;
 }
 
 .wisdom-page {
