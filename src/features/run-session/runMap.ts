@@ -38,6 +38,7 @@ interface RunMapTheme {
   glowColor: string;
   gridColor: string;
   mapStyle: string;
+  onColor: string;
   plannedColor: string;
   plannedOpacity: number;
   plannedStyle: 'dashed' | 'solid';
@@ -62,6 +63,7 @@ const classicMapTheme: RunMapTheme = {
   glowColor: 'rgba(79, 126, 255, 0.2)',
   gridColor: 'rgba(79, 126, 255, 0.08)',
   mapStyle: 'amap://styles/normal',
+  onColor: '#ffffff',
   plannedColor: '#00b9aa',
   plannedOpacity: 0.88,
   plannedStyle: 'solid',
@@ -76,17 +78,18 @@ const classicMapTheme: RunMapTheme = {
 
 const moodMapThemes: Record<MoodId, RunMapTheme> = {
   stressed: {
-    accuracyColor: '#8fd7cf',
+    accuracyColor: '#00d4c0',
     avatarStrideMs: 720,
     features: MOOD_FEATURES,
-    glowColor: 'rgba(213, 132, 164, 0.26)',
-    gridColor: 'rgba(143, 215, 207, 0.1)',
+    glowColor: 'rgba(255, 63, 143, 0.24)',
+    gridColor: 'rgba(255, 63, 143, 0.1)',
     mapStyle: 'amap://styles/whitesmoke',
-    plannedColor: '#8fd7cf',
+    onColor: '#ffffff',
+    plannedColor: '#00d4c0',
     plannedOpacity: 0.54,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#d584a4',
+    routeColor: '#ff3f8f',
     routeOpacity: 0.92,
     routeWeight: 7,
     showLabels: false,
@@ -94,17 +97,18 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     washColor: 'rgba(255, 238, 246, 0.34)',
   },
   anxious: {
-    accuracyColor: '#80d8d1',
+    accuracyColor: '#8f7bff',
     avatarStrideMs: 760,
     features: MOOD_FEATURES,
     glowColor: 'rgba(128, 216, 209, 0.3)',
     gridColor: 'rgba(143, 123, 255, 0.08)',
     mapStyle: 'amap://styles/whitesmoke',
-    plannedColor: '#9d93ea',
+    onColor: '#1b2340',
+    plannedColor: '#8f7bff',
     plannedOpacity: 0.5,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#48bdb5',
+    routeColor: '#00d4c0',
     routeOpacity: 0.92,
     routeWeight: 7,
     showLabels: false,
@@ -118,6 +122,7 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(126, 136, 168, 0.22)',
     gridColor: 'rgba(183, 240, 220, 0.08)',
     mapStyle: 'amap://styles/whitesmoke',
+    onColor: '#ffffff',
     plannedColor: '#b7f0dc',
     plannedOpacity: 0.46,
     plannedStyle: 'dashed',
@@ -136,6 +141,7 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(255, 77, 95, 0.34)',
     gridColor: 'rgba(255, 179, 71, 0.12)',
     mapStyle: 'amap://styles/macaron',
+    onColor: '#ffffff',
     plannedColor: '#ffb347',
     plannedOpacity: 0.58,
     plannedStyle: 'dashed',
@@ -154,11 +160,12 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(79, 126, 255, 0.22)',
     gridColor: 'rgba(155, 238, 230, 0.08)',
     mapStyle: 'amap://styles/whitesmoke',
+    onColor: '#ffffff',
     plannedColor: '#9beee6',
     plannedOpacity: 0.48,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#5f83db',
+    routeColor: '#4f7eff',
     routeOpacity: 0.86,
     routeWeight: 6,
     showLabels: false,
@@ -172,11 +179,12 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(255, 216, 77, 0.26)',
     gridColor: 'rgba(138, 146, 173, 0.1)',
     mapStyle: 'amap://styles/macaron',
-    plannedColor: '#8a92ad',
+    onColor: '#ffffff',
+    plannedColor: '#ffd84d',
     plannedOpacity: 0.5,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#ffd84d',
+    routeColor: '#8a92ad',
     routeOpacity: 0.95,
     routeWeight: 7,
     showLabels: false,
@@ -190,6 +198,7 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(255, 216, 77, 0.36)',
     gridColor: 'rgba(255, 127, 202, 0.12)',
     mapStyle: 'amap://styles/macaron',
+    onColor: '#1b2340',
     plannedColor: '#ff7fca',
     plannedOpacity: 0.58,
     plannedStyle: 'dashed',
@@ -208,11 +217,12 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     glowColor: 'rgba(249, 147, 190, 0.3)',
     gridColor: 'rgba(121, 225, 214, 0.1)',
     mapStyle: 'amap://styles/macaron',
+    onColor: '#1b2340',
     plannedColor: '#79e1d6',
     plannedOpacity: 0.54,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#f993be',
+    routeColor: '#ffe36d',
     routeOpacity: 0.95,
     routeWeight: 7,
     showLabels: false,
@@ -220,17 +230,18 @@ const moodMapThemes: Record<MoodId, RunMapTheme> = {
     washColor: 'rgba(255, 246, 251, 0.36)',
   },
   neutral: {
-    accuracyColor: '#79e1d6',
+    accuracyColor: '#f993be',
     avatarStrideMs: 620,
     features: MOOD_FEATURES,
     glowColor: 'rgba(143, 160, 196, 0.24)',
     gridColor: 'rgba(121, 225, 214, 0.1)',
     mapStyle: 'amap://styles/macaron',
-    plannedColor: '#79e1d6',
+    onColor: '#ffffff',
+    plannedColor: '#f993be',
     plannedOpacity: 0.52,
     plannedStyle: 'dashed',
     plannedWeight: 4,
-    routeColor: '#f993be',
+    routeColor: '#8fa0c4',
     routeOpacity: 0.94,
     routeWeight: 7,
     showLabels: false,
@@ -593,6 +604,8 @@ export function createRunMap(containerId = 'runLiveMap', messageId = 'runMapMess
 
     element.style.setProperty('--run-map-glow-color', theme.glowColor);
     element.style.setProperty('--run-map-grid-color', theme.gridColor);
+    element.style.setProperty('--run-map-on-color', theme.onColor);
+    element.style.setProperty('--run-map-planned-color', theme.plannedColor);
     element.style.setProperty('--run-map-route-color', theme.routeColor);
     element.style.setProperty('--run-map-stride-duration', `${theme.avatarStrideMs}ms`);
     element.style.setProperty('--run-map-wash-color', theme.washColor);

@@ -1191,6 +1191,8 @@
         .running-page {
             --run-map-glow-color: rgba(249, 147, 190, 0.26);
             --run-map-grid-color: rgba(121, 225, 214, 0.1);
+            --run-map-on-color: #ffffff;
+            --run-map-planned-color: #79e1d6;
             --run-map-route-color: #f993be;
             --run-map-stride-duration: 620ms;
             --run-map-wash-color: rgba(255, 246, 251, 0.34);
@@ -1224,6 +1226,8 @@
         .map-container {
             --run-map-glow-color: rgba(249, 147, 190, 0.26);
             --run-map-grid-color: rgba(121, 225, 214, 0.1);
+            --run-map-on-color: #ffffff;
+            --run-map-planned-color: #79e1d6;
             --run-map-route-color: #f993be;
             --run-map-stride-duration: 620ms;
             --run-map-wash-color: rgba(255, 246, 251, 0.34);
@@ -1275,7 +1279,7 @@
         .map-container[data-map-mode="mood"] {
             background:
                 linear-gradient(135deg, rgba(253, 251, 246, 0.95), var(--run-map-wash-color));
-            border-color: color-mix(in srgb, var(--run-map-route-color) 72%, #ffffff);
+            border-color: var(--run-map-route-color);
             box-shadow:
                 inset 0 0 0 2px var(--run-map-grid-color),
                 0 18px 38px var(--run-map-glow-color);
@@ -1290,7 +1294,7 @@
         }
 
         .map-container[data-map-mode="classic"] {
-            border-color: color-mix(in srgb, var(--run-map-route-color) 58%, rgba(27, 35, 64, 0.28));
+            border-color: var(--run-map-route-color);
             box-shadow:
                 inset 0 0 0 1px var(--run-map-grid-color),
                 0 18px 34px var(--run-map-glow-color);
@@ -1402,7 +1406,7 @@
         }
 
         .map-mode-button[data-map-mode="mood"] {
-            border-color: color-mix(in srgb, var(--run-map-route-color) 62%, #ffffff);
+            border-color: var(--run-map-route-color);
             box-shadow: 2px 2px 0 var(--run-map-glow-color);
         }
 
@@ -1641,11 +1645,11 @@
         }
 
         .map-container[data-map-mode="mood"] .run-map-planned-start {
-            background: color-mix(in srgb, var(--run-map-route-color) 38%, var(--secondary));
+            background: var(--run-map-route-color);
         }
 
         .map-container[data-map-mode="mood"] .run-map-planned-end {
-            background: color-mix(in srgb, var(--run-map-route-color) 38%, var(--accent));
+            background: var(--run-map-planned-color);
         }
 
         .running-title {
@@ -3286,7 +3290,7 @@
         .running-page[data-run-mood] .main-stats-display,
         .running-page[data-run-mood] .secondary-stat,
         .running-page[data-run-mood] .progress-container {
-            border-color: color-mix(in srgb, var(--run-map-route-color) 62%, rgba(27, 35, 64, 0.26));
+            border-color: var(--run-map-route-color);
             box-shadow:
                 inset 0 0 0 2px var(--run-map-grid-color),
                 0 12px 26px var(--run-map-glow-color);
@@ -3296,45 +3300,53 @@
         .running-page[data-run-mood] .voice-toggle,
         .running-page[data-run-mood] .voice-control-toggle,
         .running-page[data-run-mood] .pace-zone {
-            border-color: color-mix(in srgb, var(--run-map-route-color) 58%, rgba(27, 35, 64, 0.22));
-            box-shadow: 0 7px 18px color-mix(in srgb, var(--run-map-glow-color) 74%, transparent);
+            border-color: var(--run-map-route-color);
+            box-shadow: 0 7px 18px var(--run-map-glow-color);
         }
 
         .running-page[data-run-mood] .music-toggle,
         .running-page[data-run-mood] .voice-toggle,
         .running-page[data-run-mood] .voice-control-toggle {
-            color: color-mix(in srgb, var(--run-map-route-color) 76%, var(--text-main));
+            color: var(--run-map-route-color);
         }
 
         .running-page[data-run-mood] .music-toggle.active,
         .running-page[data-run-mood] .voice-toggle.active,
         .running-page[data-run-mood] .voice-control-toggle.active,
         .running-page[data-run-mood] .pace-zone.active {
-            background: color-mix(in srgb, var(--run-map-route-color) 20%, var(--panel-soft));
+            background: var(--run-map-route-color);
+            color: var(--run-map-on-color);
             box-shadow:
                 inset 0 0 0 1px var(--run-map-grid-color),
                 0 0 16px var(--run-map-glow-color);
         }
 
         .running-page[data-run-mood] .main-stats-display::before {
-            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--run-map-route-color) 18%, transparent), transparent);
+            background: linear-gradient(90deg, transparent, var(--run-map-grid-color), transparent);
+        }
+
+        .running-page[data-run-mood] .secondary-stat-value,
+        .running-page[data-run-mood] .distance-subline {
+            color: var(--run-map-route-color);
+            text-shadow: none;
         }
 
         .running-page[data-run-mood] .progress-fill {
-            background: linear-gradient(90deg, var(--run-map-route-color), var(--accent));
+            background: var(--run-map-route-color);
         }
 
         .running-page[data-run-mood] .stop-btn {
-            border: 2px solid color-mix(in srgb, var(--run-map-route-color) 74%, #ffffff);
-            background: linear-gradient(180deg, color-mix(in srgb, var(--run-map-route-color) 72%, var(--primary)), var(--primary));
+            border: 2px solid var(--run-map-route-color);
+            background: var(--run-map-route-color);
+            color: var(--run-map-on-color);
             box-shadow:
-                inset 0 0 0 2px color-mix(in srgb, var(--run-map-route-color) 28%, transparent),
+                inset 0 0 0 2px var(--run-map-grid-color),
                 0 14px 28px var(--run-map-glow-color);
         }
 
         .running-page[data-run-mood] .stop-btn:hover {
             box-shadow:
-                inset 4px 4px 0 color-mix(in srgb, var(--run-map-route-color) 36%, #8d4362),
+                inset 4px 4px 0 rgba(27, 35, 64, 0.2),
                 0 16px 34px var(--run-map-glow-color);
         }
 

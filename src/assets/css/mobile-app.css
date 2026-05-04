@@ -501,7 +501,7 @@ button,
 }
 
 .running-page[data-run-mood] .stop-btn {
-  border: 2px solid color-mix(in srgb, var(--run-map-route-color) 74%, #ffffff);
+  border: 2px solid var(--run-map-route-color);
 }
 
 .summary-page {
