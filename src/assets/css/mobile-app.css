@@ -61,13 +61,7 @@ button,
 }
 
 .cursor-glow {
-  display: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .cursor-glow {
-    display: block;
-  }
+  display: block;
 }
 
 .app-container {
@@ -615,7 +609,9 @@ button,
   }
 
   .home-avatar-prompt {
+    align-items: center;
     flex: 0 0 auto;
+    width: min(150px, 38vw);
   }
 
   .decoration-icon {
@@ -623,12 +619,19 @@ button,
     height: clamp(54px, 15vw, 68px);
   }
 
-.home-avatar-prompt .avatar-speech {
+  .home-avatar-prompt .avatar-speech {
     display: block;
-    max-width: min(132px, 34vw);
+    width: min(132px, 34vw);
+    max-width: 100%;
     padding: 7px 8px;
     font-size: clamp(6px, 1.8vw, 7px);
     line-height: 1.45;
+  }
+
+  .home-avatar-prompt .avatar-speech::before {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) rotate(45deg);
   }
 
   .bottom-area {

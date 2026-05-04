@@ -36,9 +36,6 @@ const app = getMoodRunController();
       <h3>RUN HISTORY</h3>
       <div class="history-list" id="historyList"></div>
     </div>
-    <div class="page-actions">
-      <button class="back-btn" @click="app.goHome()">BACK</button>
-    </div>
   </div>
 
   <div class="page avatar-page" id="avatarPage">
