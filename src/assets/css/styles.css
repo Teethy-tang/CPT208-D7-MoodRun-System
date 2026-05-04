@@ -693,7 +693,7 @@
         .ai-use-btn {
             position: fixed;
             left: 50%;
-            bottom: max(192px, calc(env(safe-area-inset-bottom) + 178px));
+            bottom: max(96px, calc(env(safe-area-inset-bottom) + 82px));
             z-index: 120;
             display: inline-flex;
             align-items: center;
@@ -757,7 +757,7 @@
             justify-content: center;
             gap: 34px;
             min-height: 0;
-            padding: 28px 0 110px;
+            padding: 28px 0 92px;
         }
 
         .ai-orb {
@@ -768,38 +768,57 @@
             border-radius: 50%;
             display: grid;
             place-items: center;
-            animation: aiOrbBreathe 5.8s ease-in-out infinite;
-            filter: blur(0.1px) drop-shadow(0 24px 54px rgba(150, 100, 230, 0.2));
+            background:
+                radial-gradient(
+                    circle at 33% 30%,
+                    rgba(136, 146, 255, 0.68) 0%,
+                    rgba(156, 118, 255, 0.55) 25%,
+                    rgba(196, 103, 245, 0.5) 40%,
+                    rgba(238, 112, 210, 0.5) 60%,
+                    rgba(255, 142, 201, 0.32) 74%,
+                    transparent 88%
+                ),
+                radial-gradient(
+                    circle at 70% 66%,
+                    rgba(123, 222, 255, 0.36) 0%,
+                    rgba(157, 143, 255, 0.22) 34%,
+                    transparent 62%
+                ),
+                radial-gradient(
+                    circle at 52% 82%,
+                    rgba(255, 128, 196, 0.28) 0%,
+                    transparent 58%
+                );
+            opacity: 0.92;
+            animation: aiOrbBreathe 4.6s ease-in-out infinite;
+            filter: blur(20px) saturate(1.1) brightness(1.03);
+            transform: translateZ(0);
         }
 
         .ai-orb::before,
         .ai-orb::after {
             content: '';
             position: absolute;
-            inset: 0;
+            inset: -8%;
             border-radius: 50%;
             background:
-                radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.62), transparent 14%),
-                radial-gradient(circle at 38% 42%, rgba(128, 218, 238, 0.36), transparent 30%),
-                radial-gradient(circle at 64% 62%, rgba(246, 112, 210, 0.44), transparent 44%),
-                radial-gradient(circle at 50% 48%, rgba(155, 118, 255, 0.42), transparent 66%),
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.52), transparent 72%);
-            border: 1px solid rgba(27, 35, 64, 0.18);
-            box-shadow:
-                inset 18px 18px 44px rgba(255, 255, 255, 0.28),
-                inset -24px -26px 48px rgba(126, 88, 170, 0.12),
-                0 0 90px rgba(185, 128, 255, 0.24),
-                0 0 140px rgba(249, 147, 190, 0.18);
+                radial-gradient(circle at 38% 34%, rgba(127, 228, 255, 0.34) 0%, transparent 38%),
+                radial-gradient(circle at 64% 46%, rgba(168, 126, 255, 0.34) 0%, transparent 48%),
+                radial-gradient(circle at 50% 72%, rgba(255, 137, 207, 0.36) 0%, transparent 54%);
+            filter: blur(10px);
+            opacity: 0.84;
+            pointer-events: none;
         }
 
         .ai-orb::after {
-            inset: -24%;
-            border: 0;
+            inset: -26%;
             background:
-                radial-gradient(circle at 50% 50%, rgba(203, 153, 255, 0.18), transparent 56%),
-                radial-gradient(circle at 50% 50%, rgba(249, 147, 190, 0.16), transparent 68%);
-            box-shadow: none;
-            animation: aiOrbAura 5.8s ease-in-out infinite;
+                radial-gradient(circle at 48% 46%, rgba(203, 153, 255, 0.2), transparent 58%),
+                radial-gradient(circle at 56% 58%, rgba(249, 147, 190, 0.16), transparent 70%),
+                radial-gradient(circle at 36% 34%, rgba(121, 225, 214, 0.12), transparent 58%);
+            filter: blur(24px);
+            opacity: 0.5;
+            animation: aiOrbAura 4.6s ease-in-out infinite;
         }
 
         .ai-orb-core,
@@ -810,20 +829,20 @@
 
         @keyframes aiOrbBreathe {
             0%, 100% {
-                transform: scale(0.98);
-                opacity: 0.88;
-                filter: blur(0.1px) drop-shadow(0 22px 50px rgba(150, 100, 230, 0.18));
+                transform: scale(0.9);
+                opacity: 0.76;
+                filter: blur(18px) saturate(1.02) brightness(0.95);
             }
             50% {
-                transform: scale(1.06);
-                opacity: 1;
-                filter: blur(0.1px) drop-shadow(0 30px 64px rgba(150, 100, 230, 0.26));
+                transform: scale(1.14);
+                opacity: 0.98;
+                filter: blur(24px) saturate(1.2) brightness(1.14);
             }
         }
 
         @keyframes aiOrbAura {
-            0%, 100% { transform: scale(0.9); opacity: 0.42; }
-            50% { transform: scale(1.08); opacity: 0.72; }
+            0%, 100% { transform: scale(0.78); opacity: 0.28; }
+            50% { transform: scale(1.18); opacity: 0.76; }
         }
 
         .ai-chat-log {
@@ -891,7 +910,7 @@
         .ai-input-bar {
             position: fixed;
             left: 50%;
-            bottom: max(126px, calc(env(safe-area-inset-bottom) + 112px));
+            bottom: max(22px, calc(env(safe-area-inset-bottom) + 18px));
             z-index: 4;
             display: grid;
             grid-template-columns: 1fr 54px;
@@ -3215,10 +3234,10 @@
             --nav-glow-y: 50%;
             position: fixed;
             left: 50%;
-            bottom: max(18px, env(safe-area-inset-bottom));
-            width: min(88vw, 420px);
-            height: 92px;
-            padding: 10px 18px;
+            bottom: max(10px, env(safe-area-inset-bottom));
+            width: min(82vw, 382px);
+            height: 78px;
+            padding: 8px 16px;
             transform: translateX(-50%);
             overflow: hidden;
             justify-content: space-around;
@@ -3315,8 +3334,8 @@
         .nav-item {
             position: relative;
             isolation: isolate;
-            width: 118px;
-            height: 68px;
+            width: 104px;
+            height: 58px;
             border-radius: 999px;
             color: #6d7594;
             overflow: hidden;
@@ -3356,9 +3375,9 @@
         }
 
         .nav-item.active::after {
-            left: 38px;
-            right: 38px;
-            bottom: 5px;
+            left: 34px;
+            right: 34px;
+            bottom: 4px;
             height: 4px;
         }
 
@@ -3367,8 +3386,15 @@
         }
 
         .nav-icon {
-            margin-bottom: 5px;
+            width: 28px;
+            height: 28px;
+            margin-bottom: 4px;
             transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .pixel-nav-icon {
+            width: 28px;
+            height: 28px;
         }
 
         .nav-item:hover .nav-icon,
@@ -3380,6 +3406,16 @@
 
         .page {
             padding-bottom: 150px;
+        }
+
+        .meditation-page,
+        .mood-page,
+        .mood-ai-page,
+        .plan-page,
+        .route-setup-page,
+        .custom-plan-page,
+        .running-page {
+            padding-bottom: 40px;
         }
 
         @keyframes navPixelBump {
@@ -3411,14 +3447,14 @@
             }
 
             .ai-use-btn {
-                bottom: max(178px, calc(env(safe-area-inset-bottom) + 164px));
+                bottom: max(88px, calc(env(safe-area-inset-bottom) + 74px));
                 width: max-content;
                 max-width: calc(100vw - 40px);
             }
 
             .ai-orb-stage {
                 gap: 22px;
-                padding: 18px 0 116px;
+                padding: 18px 0 88px;
             }
 
             .ai-orb {
@@ -3439,7 +3475,7 @@
             }
 
             .ai-input-bar {
-                bottom: max(120px, calc(env(safe-area-inset-bottom) + 106px));
+                bottom: max(16px, calc(env(safe-area-inset-bottom) + 12px));
                 grid-template-columns: 1fr 48px;
                 width: calc(100vw - 32px);
             }

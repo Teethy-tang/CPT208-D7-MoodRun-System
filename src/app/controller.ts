@@ -235,7 +235,16 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     document.querySelectorAll('.page').forEach((page) => page.classList.remove('active'));
     document.getElementById(pageId)?.classList.add('active');
     document.getElementById('cursorGlow')?.classList.toggle('home-visible', pageId === 'homePage');
-    document.querySelector('.bottom-nav')?.classList.toggle('run-hidden', pageId === 'runningPage');
+    const immersivePages: PageId[] = [
+      'meditationPage',
+      'moodPage',
+      'moodAiPage',
+      'planPage',
+      'routeSetupPage',
+      'customPlanPage',
+      'runningPage',
+    ];
+    document.querySelector('.bottom-nav')?.classList.toggle('run-hidden', immersivePages.includes(pageId));
   }
 
   function updateNav(active: 'home' | 'profile') {
