@@ -51,7 +51,7 @@ const app = getMoodRunController();
       <p class="wisdom-text" id="wisdomText">Click to reveal...</p>
     </div>
     <button class="reveal-btn" id="revealBtn" @click="app.revealWisdom()">REVEAL WISDOM</button>
-    <div class="page-actions" style="margin-top: 30px">
+    <div class="page-actions wisdom-actions">
       <button class="back-btn" @click="app.goHome()">BACK TO HOME</button>
       <button class="retro-btn" @click="app.goToProfile()">VIEW PROFILE</button>
     </div>

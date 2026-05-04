@@ -235,16 +235,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     document.querySelectorAll('.page').forEach((page) => page.classList.remove('active'));
     document.getElementById(pageId)?.classList.add('active');
     document.getElementById('cursorGlow')?.classList.toggle('home-visible', pageId === 'homePage');
-    const immersivePages: PageId[] = [
-      'meditationPage',
-      'moodPage',
-      'moodAiPage',
-      'planPage',
-      'routeSetupPage',
-      'customPlanPage',
-      'runningPage',
-    ];
-    document.querySelector('.bottom-nav')?.classList.toggle('run-hidden', immersivePages.includes(pageId));
+    const shouldShowBottomNav = pageId === 'homePage' || pageId === 'profilePage';
+    document.querySelector('.bottom-nav')?.classList.toggle('run-hidden', !shouldShowBottomNav);
   }
 
   function updateNav(active: 'home' | 'profile') {
@@ -589,6 +581,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       }
 
       await routeSetupMap?.applyManualRoute(startInput, endInput);
+      scrollRouteSetupPageToTop();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not mark that route.';
       updateRouteSetupStatus(message);
@@ -625,6 +618,21 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
   function updateRouteSetupStatus(message: string) {
     setText('routeSetupStatus', message);
+  }
+
+  function scrollRouteSetupPageToTop() {
+    const routePage = document.getElementById('routeSetupPage');
+    if (!routePage) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    routePage.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('moodrun:map-resize'));
+    }, prefersReducedMotion ? 0 : 360);
   }
 
   function setText(id: string, value: string) {
@@ -773,6 +781,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     const musicToggle = document.getElementById('musicToggle');
     if (musicToggle) {
       musicToggle.classList.add('active');
+      musicToggle.setAttribute('aria-label', 'Turn music off');
       const text = musicToggle.querySelector('span:last-child');
       if (text) text.textContent = 'ON';
     }
@@ -858,6 +867,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     if (!button) return;
 
     button.classList.toggle('active', state.musicEnabled);
+    button.setAttribute('aria-label', state.musicEnabled ? 'Turn music off' : 'Turn music on');
     const label = button.querySelector('span:last-child');
     if (label) label.textContent = state.musicEnabled ? 'ON' : 'OFF';
   }

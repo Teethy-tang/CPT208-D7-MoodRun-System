@@ -4,9 +4,21 @@ import { getMoodRunController } from '../app/controller';
 
 const app = getMoodRunController();
 const isMapExpanded = ref(false);
+const isMapClosing = ref(false);
 
 async function toggleMapExpansion() {
-  isMapExpanded.value = !isMapExpanded.value;
+  if (isMapExpanded.value) {
+    isMapClosing.value = true;
+    window.setTimeout(async () => {
+      isMapExpanded.value = false;
+      isMapClosing.value = false;
+      await nextTick();
+      window.dispatchEvent(new CustomEvent('moodrun:map-resize'));
+    }, 320);
+    return;
+  }
+
+  isMapExpanded.value = true;
   await nextTick();
 
   window.dispatchEvent(new CustomEvent('moodrun:map-resize'));
@@ -22,20 +34,42 @@ async function toggleMapExpansion() {
       <h2 class="running-title">RUNNING...</h2>
       <button class="mode-toggle" id="runModeToggle" type="button" @click="app.toggleRunTestMode()">LIVE</button>
       <button class="music-toggle active" id="musicToggle" type="button" @click="app.toggleMusic()">
-        <span class="music-icon" aria-hidden="true">MUS</span>
-        <span>ON</span>
+        <span class="run-control-icon music-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M9 18 V6 L18 4 V16" />
+            <path d="M9 18 C9 19.7 7.7 21 6 21 C4.3 21 3 19.7 3 18 C3 16.3 4.3 15 6 15 C7.7 15 9 16.3 9 18 Z" />
+            <path d="M18 16 C18 17.7 16.7 19 15 19 C13.3 19 12 17.7 12 16 C12 14.3 13.3 13 15 13 C16.7 13 18 14.3 18 16 Z" />
+          </svg>
+        </span>
+        <span class="run-control-state">ON</span>
       </button>
       <button class="voice-toggle active" id="voiceToggle" type="button" @click="app.toggleVoice()">
-        <span class="voice-icon" aria-hidden="true">)))</span>
-        <span>ON</span>
+        <span class="run-control-icon voice-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M4 10 H8 L13 5 V19 L8 14 H4 Z" />
+            <path d="M16 9 C17.2 10.2 17.2 13.8 16 15" />
+            <path d="M18.5 6.5 C21.3 9.3 21.3 14.7 18.5 17.5" />
+          </svg>
+        </span>
+        <span class="run-control-state">ON</span>
       </button>
       <button class="voice-control-toggle" id="voiceControlToggle" type="button" @click="app.toggleVoiceControl()">
-        <span class="voice-control-icon" aria-hidden="true">MIC</span>
-        <span>OFF</span>
+        <span class="run-control-icon voice-control-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M12 4 C10.3 4 9 5.3 9 7 V12 C9 13.7 10.3 15 12 15 C13.7 15 15 13.7 15 12 V7 C15 5.3 13.7 4 12 4 Z" />
+            <path d="M6 11 C6 14.3 8.7 17 12 17 C15.3 17 18 14.3 18 11" />
+            <path d="M12 17 V21" />
+            <path d="M9 21 H15" />
+          </svg>
+        </span>
+        <span class="run-control-state">OFF</span>
       </button>
     </div>
     <div class="map-stage" :class="{ 'map-stage-expanded': isMapExpanded }">
-      <div class="map-container" :class="{ 'map-container-expanded': isMapExpanded }">
+      <div
+        class="map-container"
+        :class="{ 'map-container-expanded': isMapExpanded, 'map-container-collapsing': isMapClosing }"
+      >
         <div class="run-map-canvas" id="runLiveMap" aria-label="Live run map"></div>
         <div class="run-map-message" id="runMapMessage" aria-live="polite">LIVE MAP LOADING...</div>
         <div class="map-overlay">

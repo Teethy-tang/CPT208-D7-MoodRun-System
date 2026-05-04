@@ -31,7 +31,7 @@ watch(
   </div>
 
   <nav class="bottom-nav">
-    <div class="nav-item active" @click="app.goHome()">
+    <button class="nav-item active" type="button" aria-label="Go to home" @click="app.goHome()">
       <span class="nav-icon" aria-hidden="true">
         <svg class="pixel-nav-icon home-nav-icon" viewBox="0 0 40 40">
           <path
@@ -45,8 +45,8 @@ watch(
         </svg>
       </span>
       <span>HOME</span>
-    </div>
-    <div class="nav-item" @click="app.goToProfile()">
+    </button>
+    <button class="nav-item" type="button" aria-label="Go to profile" @click="app.goToProfile()">
       <span class="nav-icon" aria-hidden="true">
         <svg class="pixel-nav-icon profile-nav-icon" viewBox="0 0 40 40">
           <path
@@ -67,6 +67,6 @@ watch(
         </svg>
       </span>
       <span>PROFILE</span>
-    </div>
+    </button>
   </nav>
 </template>

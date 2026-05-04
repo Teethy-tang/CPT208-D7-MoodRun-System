@@ -1,0 +1,19 @@
+{
+  "name": "MoodRun",
+  "short_name": "MoodRun",
+  "description": "A mobile-first mood-aware running web app.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdfbf6",
+  "theme_color": "#fdfbf6",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
