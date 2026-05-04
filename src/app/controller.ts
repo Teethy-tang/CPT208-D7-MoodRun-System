@@ -5,9 +5,9 @@ import {
   moodPlans,
   moodProfiles,
   paceDescriptions,
-  wisdomQuotes,
 } from '../features/mood-engine/data';
 import { analyzeMoodThought, type MoodAnalysis } from '../features/mood-engine/moodAnalyzer';
+import { selectWisdomEntry } from '../features/mood-engine/wisdomBook';
 import {
   avatarOptions,
   createAvatarSvg,
@@ -1218,12 +1218,19 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   }
 
   function revealWisdom() {
-    const quotes = wisdomQuotes[state.currentMood || 'neutral'];
-    const quote = quotes[Math.floor(Math.random() * quotes.length)];
+    const mood = state.currentMood || 'neutral';
+    const moodShift = state.lastMoodShift || moodOutcomes[mood];
+    const entry = selectWisdomEntry({
+      mood,
+      moodAfter: moodShift.after,
+      thought: state.currentThought,
+      distanceKm: state.runData.distance,
+      elapsedSec: state.runData.time,
+    });
     const wisdomText = document.getElementById('wisdomText');
     const revealButton = document.getElementById('revealBtn') as HTMLButtonElement | null;
 
-    if (wisdomText) wisdomText.textContent = `"${quote}"`;
+    if (wisdomText) wisdomText.textContent = `"${entry.quote}"`;
     if (revealButton) revealButton.disabled = true;
   }
 

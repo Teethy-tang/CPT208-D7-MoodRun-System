@@ -198,6 +198,7 @@ button,
 .plan-page .page-actions,
 .route-setup-page .page-actions,
 .custom-plan-page .page-actions,
+.meditation-page .page-actions,
 .avatar-page .page-actions,
 .wisdom-page .page-actions {
   margin-top: auto;
@@ -208,17 +209,28 @@ button,
 .plan-page .page-actions .retro-btn,
 .route-setup-page .page-actions .retro-btn,
 .custom-plan-page .page-actions .retro-btn,
+.meditation-page .page-actions .retro-btn,
 .avatar-page .page-actions .retro-btn,
 .wisdom-page .page-actions .retro-btn,
 .mood-page .page-actions .back-btn,
 .plan-page .page-actions .back-btn,
 .route-setup-page .page-actions .back-btn,
 .custom-plan-page .page-actions .back-btn,
+.meditation-page .page-actions .back-btn,
 .avatar-page .page-actions .back-btn,
 .wisdom-page .page-actions .back-btn {
   flex: 1 1 0;
   margin-left: 0;
   padding-inline: 12px;
+}
+
+.meditation-page .sound-options {
+  margin-bottom: 12px;
+}
+
+.meditation-page .page-actions {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .mood-grid {

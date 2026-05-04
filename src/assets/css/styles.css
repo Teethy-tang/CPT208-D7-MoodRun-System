@@ -2753,7 +2753,17 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 12px;
+        }
+
+        .meditation-page .page-actions {
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        .meditation-page .page-actions .back-btn {
+            width: 100%;
+            margin-left: 0;
         }
 
         .sound-option {
