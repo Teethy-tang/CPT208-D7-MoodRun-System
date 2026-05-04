@@ -7,6 +7,7 @@ import {
   paceDescriptions,
   wisdomQuotes,
 } from '../features/mood-engine/data';
+import { analyzeMoodThought, type MoodAnalysis } from '../features/mood-engine/moodAnalyzer';
 import {
   avatarOptions,
   createAvatarSvg,
@@ -332,9 +333,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     state.currentThought = message;
     if (input) input.value = '';
 
-    const mood = inferMoodFromThought(message);
-    state.aiSuggestedMood = mood;
-    setAiMoodSuggestion(mood);
+    const analysis = analyzeMoodThought(message);
+    state.aiSuggestedMood = analysis.mood;
+    setAiMoodSuggestion(analysis);
 
     const useButton = document.getElementById('aiUseMoodBtn') as HTMLButtonElement | null;
     if (useButton) useButton.hidden = false;
@@ -1542,70 +1543,38 @@ function setAiMessage(text: string) {
   chatLog.appendChild(message);
 }
 
-function setAiMoodSuggestion(mood: MoodId) {
+function setAiMoodSuggestion(analysis: MoodAnalysis) {
   const chatLog = document.getElementById('aiChatLog');
-  const profile = moodProfiles[mood];
+  const profile = moodProfiles[analysis.mood];
   if (!chatLog) return;
 
   const message = document.createElement('div');
   const label = document.createElement('strong');
   const detail = document.createElement('span');
+  const meta = document.createElement('div');
+  const confidence = document.createElement('span');
+  const intensity = document.createElement('span');
+  const reason = document.createElement('small');
 
   message.className = 'ai-message assistant';
-  label.textContent = `MOOD: ${mood.toUpperCase()}`;
-  detail.textContent = ` ${profile.response}`;
-  message.append(label, document.createElement('br'), detail);
+  label.textContent = `MOOD: ${analysis.mood.toUpperCase()}`;
+  detail.textContent = ` ${analysis.reply || profile.response}`;
+  meta.className = 'ai-analysis-meta';
+  confidence.textContent = `CONFIDENCE ${Math.round(analysis.confidence * 100)}%`;
+  intensity.textContent = `INTENSITY ${analysis.intensity.toUpperCase()}`;
+  meta.append(confidence, intensity);
+
+  if (analysis.secondaryMood) {
+    const secondary = document.createElement('span');
+    secondary.textContent = `MIXED ${analysis.secondaryMood.toUpperCase()}`;
+    meta.appendChild(secondary);
+  }
+
+  reason.className = 'ai-analysis-reasons';
+  reason.textContent = analysis.reasons.join(' / ');
+  message.append(label, document.createElement('br'), detail, meta, reason);
   chatLog.innerHTML = '';
   chatLog.appendChild(message);
-}
-
-function inferMoodFromThought(value: string): MoodId {
-  const text = value.toLowerCase();
-  const signals: Array<{ mood: MoodId; words: string[] }> = [
-    {
-      mood: 'angry',
-      words: ['angry', 'mad', 'rage', 'furious', 'annoyed', 'hate', 'unfair', 'pissed'],
-    },
-    {
-      mood: 'anxious',
-      words: ['anxious', 'worry', 'worried', 'panic', 'nervous', 'afraid', 'scared', 'overthinking', 'deadline'],
-    },
-    {
-      mood: 'stressed',
-      words: ['stress', 'stressed', 'pressure', 'overwhelmed', 'too much', 'busy', 'crushed', 'exam', 'workload'],
-    },
-    {
-      mood: 'sad',
-      words: ['sad', 'down', 'lonely', 'empty', 'cry', 'hurt', 'heavy', 'miss', 'depressed'],
-    },
-    {
-      mood: 'tired',
-      words: ['tired', 'sleepy', 'exhausted', 'drained', 'no energy', 'burned out', 'weak'],
-    },
-    {
-      mood: 'bored',
-      words: ['bored', 'flat', 'nothing', 'same', 'dull', 'stuck', 'boring'],
-    },
-    {
-      mood: 'excited',
-      words: ['excited', 'hyped', 'restless', 'ready', 'energy', "can't wait"],
-    },
-    {
-      mood: 'happy',
-      words: ['happy', 'good', 'great', 'joy', 'grateful', 'proud', 'smile'],
-    },
-  ];
-
-  const scores = signals.map((signal) => ({
-    mood: signal.mood,
-    score: signal.words.reduce((sum, word) => sum + (text.includes(word) ? 1 : 0), 0),
-  }));
-  const best = scores.sort((a, b) => b.score - a.score)[0];
-
-  if (best?.score > 0) return best.mood;
-  if (text.length < 18) return 'neutral';
-  if (/[?!]{2,}/.test(text)) return 'anxious';
-  return 'neutral';
 }
 
 function escapeHtml(value: string) {
