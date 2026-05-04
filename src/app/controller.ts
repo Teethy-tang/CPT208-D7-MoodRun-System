@@ -15,6 +15,7 @@ import {
   randomAvatar,
   saveAvatar,
 } from '../features/profile/avatar';
+import { createMeditationAudio } from '../features/meditation/ambientAudio';
 import {
   formatPace,
   formatTime,
@@ -47,7 +48,7 @@ import {
   initCursorGlow,
   initGravityGrid,
   initNavGlow,
-  selectSound,
+  selectSound as renderSelectedSound,
   showCelebration,
   startBreathing,
   startPixelFireworks,
@@ -56,6 +57,7 @@ import {
 } from '../services/ui/effects';
 import type {
   AvatarConfig,
+  MeditationSound,
   MoodId,
   MoodRunState,
   PageId,
@@ -116,7 +118,7 @@ export interface MoodRunController {
   renderRunModeToggle: () => void;
   renderVoiceToggle: () => void;
   renderVoiceControlToggle: () => void;
-  selectSound: (sound: string) => void;
+  selectSound: (sound: MeditationSound) => Promise<void>;
 }
 
 declare global {
@@ -152,6 +154,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   let routePointSuggestions: Record<RoutePointKind, RoutePlanPoint[]> = { start: [], end: [] };
   let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
   let stopRunConfirmationExpiresAt = 0;
+  const meditationAudio = createMeditationAudio();
   const voiceAssistant = createVoiceAssistant();
   const voiceCommandListener = createVoiceCommandListener({
     onStatus: handleVoiceControlStatus,
@@ -177,6 +180,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       if (state.runSession) state.runSession.stop();
       voiceCommandListener.stop();
       voiceAssistant.stop();
+      meditationAudio.stop({ fade: false });
       stopBreathing();
       stopPixelFireworks();
     });
@@ -228,6 +232,9 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     if (pageId !== 'meditationPage') {
       stopBreathing();
+      state.meditationAudioEnabled = false;
+      meditationAudio.stop();
+      renderMeditationSoundState();
     }
   }
 
@@ -374,6 +381,22 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   async function goToMeditation() {
     await showPage('meditationPage');
     startBreathing();
+    meditationAudio.preload(state.meditationSound);
+    renderMeditationSoundState();
+  }
+
+  async function selectSound(sound: MeditationSound) {
+    if (state.meditationAudioEnabled && state.meditationSound === sound && meditationAudio.isPlaying()) {
+      state.meditationAudioEnabled = false;
+      meditationAudio.stop();
+      renderMeditationSoundState();
+      return;
+    }
+
+    state.meditationSound = sound;
+    const isPlaying = await meditationAudio.play(sound, state.meditationVolume);
+    state.meditationAudioEnabled = isPlaying;
+    renderMeditationSoundState();
   }
 
   async function goToAvatar() {
@@ -1324,6 +1347,11 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     const label = micToggle.querySelector('span:last-child');
     if (label) label.textContent = supported ? (active ? 'ON' : 'OFF') : 'N/A';
+  }
+
+  function renderMeditationSoundState() {
+    const activeSound = state.meditationAudioEnabled && meditationAudio.isPlaying() ? state.meditationSound : null;
+    renderSelectedSound(activeSound);
   }
 
   const controller: MoodRunController = {

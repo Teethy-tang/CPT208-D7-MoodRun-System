@@ -424,7 +424,15 @@ export function stopBreathing() {
   }
 }
 
-export function selectSound(sound: string) {
-  document.querySelectorAll('.sound-option').forEach((option) => option.classList.remove('active'));
-  document.querySelector(`[data-sound="${sound}"]`)?.classList.add('active');
+export function selectSound(sound: string | null) {
+  document.querySelectorAll('.sound-option').forEach((option) => {
+    option.classList.remove('active');
+    option.setAttribute('aria-pressed', 'false');
+  });
+
+  if (!sound) return;
+
+  const selectedOption = document.querySelector(`[data-sound="${sound}"]`);
+  selectedOption?.classList.add('active');
+  selectedOption?.setAttribute('aria-pressed', 'true');
 }

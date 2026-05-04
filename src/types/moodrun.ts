@@ -25,6 +25,8 @@ export type PageId =
   | 'profilePage'
   | 'avatarPage';
 
+export type MeditationSound = 'rain' | 'ocean' | 'forest' | 'wind';
+
 export type RouteGroupName = 'home' | 'mood' | 'run' | 'summary' | 'profile';
 
 export interface MoodOutcome {
@@ -161,6 +163,9 @@ export interface MoodRunState {
   avatarDraft: AvatarConfig;
   voiceControlEnabled: boolean;
   musicEnabled: boolean;
+  meditationSound: MeditationSound;
+  meditationAudioEnabled: boolean;
+  meditationVolume: number;
   voiceEnabled: boolean;
   runTestMode: boolean;
   runSession: RunSessionHandle | null;
