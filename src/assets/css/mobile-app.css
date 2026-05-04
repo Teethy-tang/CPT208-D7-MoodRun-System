@@ -608,6 +608,10 @@ button,
     align-items: flex-start;
   }
 
+  .home-page {
+    position: relative;
+  }
+
   .slogan-main {
     font-size: clamp(38px, 12vw, 58px);
     text-shadow: 3px 3px 0 var(--primary), 0 0 14px rgba(0, 255, 204, 0.42);
@@ -621,8 +625,12 @@ button,
 
   .home-avatar-prompt {
     align-items: center;
-    flex: 0 0 min(150px, 38vw);
-    min-width: min(150px, 38vw);
+    position: absolute;
+    top: calc(var(--app-page-top) + var(--safe-top) + 2px);
+    right: calc(var(--app-page-inline) + var(--safe-right));
+    z-index: 3;
+    width: min(132px, 34vw);
+    min-width: min(132px, 34vw);
   }
 
   .decoration-icon {
@@ -632,7 +640,7 @@ button,
 
   .home-avatar-prompt .avatar-speech {
     display: block;
-    width: min(132px, 34vw);
+    width: 100%;
     max-width: 100%;
     padding: 7px 8px;
     font-size: clamp(6px, 1.8vw, 7px);
