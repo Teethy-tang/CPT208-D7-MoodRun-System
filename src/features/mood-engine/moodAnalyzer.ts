@@ -48,6 +48,16 @@ const moodSignals: MoodSignal[] = [
       'annoyed',
       'irritated',
       'pissed',
+      'frustrated',
+      'fed up',
+      'livid',
+      'resentful',
+      'sick of',
+      'had enough',
+      'so done',
+      'done with this',
+      'want to scream',
+      'feel attacked',
       'hate',
       'unfair',
       'fuming',
@@ -56,11 +66,20 @@ const moodSignals: MoodSignal[] = [
       '火大',
       '气死',
       '烦死',
+      '烦躁',
+      '很烦',
       '恼火',
       '暴躁',
       '想骂',
       '不公平',
       '忍不了',
+      '受够了',
+      '气炸',
+      '气疯',
+      '窝火',
+      '来气',
+      '憋屈',
+      '火冒三丈',
       '炸了',
     ],
     weight: 2.4,
@@ -79,6 +98,18 @@ const moodSignals: MoodSignal[] = [
       'overthinking',
       'what if',
       "can't breathe",
+      'uneasy',
+      'on edge',
+      'tense',
+      'spiraling',
+      'freaking out',
+      'freaked out',
+      'stressed about',
+      'worried about',
+      'feel unsafe',
+      'uncertain',
+      'dread',
+      'dreading',
       '焦虑',
       '担心',
       '害怕',
@@ -89,6 +120,15 @@ const moodSignals: MoodSignal[] = [
       '睡不着',
       '怎么办',
       '不安',
+      '忐忑',
+      '发慌',
+      '慌张',
+      '心里没底',
+      '没底',
+      '担忧',
+      '害怕出错',
+      '怕',
+      '恐慌',
       '恐惧',
     ],
     weight: 2.25,
@@ -109,6 +149,18 @@ const moodSignals: MoodSignal[] = [
       'exam',
       'assignment',
       'under pressure',
+      "can't handle this",
+      'cannot handle this',
+      'too many things',
+      'too much work',
+      'behind schedule',
+      'running out of time',
+      'no time',
+      'packed schedule',
+      'swamped',
+      'overloaded',
+      'snowed under',
+      'mental load',
       '压力',
       '压垮',
       '任务',
@@ -117,9 +169,18 @@ const moodSignals: MoodSignal[] = [
       '作业',
       '太多事',
       '忙',
+      '太忙',
+      '忙不过来',
       '崩溃',
       '撑不住',
       '顶不住',
+      '来不及',
+      '赶不完',
+      '没时间',
+      '事情太多',
+      '脑子很乱',
+      '负担',
+      '被任务压住',
       '被压',
     ],
     weight: 2.15,
@@ -141,6 +202,29 @@ const moodSignals: MoodSignal[] = [
       'hopeless',
       'unhappy',
       'not happy',
+      'feel bad',
+      'bad',
+      'awful',
+      'terrible',
+      'miserable',
+      'rough',
+      'not okay',
+      'not ok',
+      'feel low',
+      'low mood',
+      'blue',
+      'gloomy',
+      'devastated',
+      'disappointed',
+      'let down',
+      'rejected',
+      'ignored',
+      'worthless',
+      'not enough',
+      'feel small',
+      'feel alone',
+      'feel empty',
+      'feel like crying',
       '难过',
       '伤心',
       '孤独',
@@ -153,6 +237,20 @@ const moodSignals: MoodSignal[] = [
       '沮丧',
       '抑郁',
       '低落',
+      '心酸',
+      '失望',
+      '被忽视',
+      '没人懂',
+      '没人理解',
+      '丧',
+      '破防',
+      '想家',
+      '委靡',
+      '心情不好',
+      '不好受',
+      '糟糕',
+      '很糟',
+      '难受',
       '心碎',
       '想念',
       '不开心',
@@ -174,6 +272,18 @@ const moodSignals: MoodSignal[] = [
       'weak',
       'fatigue',
       'worn out',
+      'worn down',
+      'low energy',
+      'sleep deprived',
+      'need sleep',
+      'need rest',
+      'out of energy',
+      'zero energy',
+      'running on empty',
+      'body feels heavy',
+      "can't focus",
+      'cannot focus',
+      'brain fog',
       '累',
       '疲惫',
       '困',
@@ -182,6 +292,14 @@ const moodSignals: MoodSignal[] = [
       '精疲力尽',
       '没睡',
       '睡眠不足',
+      '想睡',
+      '需要休息',
+      '身体沉',
+      '脑袋昏',
+      '脑雾',
+      '没精神',
+      '没状态',
+      '乏力',
       '躺平',
       '虚',
     ],
@@ -201,13 +319,33 @@ const moodSignals: MoodSignal[] = [
       'meh',
       'numb',
       'unmotivated',
+      'uninspired',
+      'lost interest',
+      'no interest',
+      'tired of this',
+      'same old',
+      'nothing new',
+      'pointless',
+      'monotony',
+      'monotonous',
+      'checked out',
+      'zone out',
       '无聊',
       '没意思',
+      '无趣',
       '麻木',
       '空转',
       '卡住',
       '提不起劲',
       '没动力',
+      '没兴趣',
+      '没劲',
+      '乏味',
+      '单调',
+      '腻了',
+      '厌倦',
+      '没有新鲜感',
+      '发空',
       '平淡',
       '不知道干嘛',
       '发呆',
@@ -226,13 +364,32 @@ const moodSignals: MoodSignal[] = [
       "can't wait",
       'thrilled',
       'pumped',
+      'eager',
+      'hopeful',
+      'motivated',
+      'inspired',
+      'amped',
+      'buzzing',
+      'fired up',
+      'looking forward',
+      'ready to go',
+      'full of energy',
+      'big energy',
+      'energized',
       '兴奋',
       '激动',
       '期待',
       '迫不及待',
       '冲',
       '有劲',
+      '有动力',
+      '来劲',
       '热血',
+      '燃起来',
+      '跃跃欲试',
+      '干劲',
+      '上头',
+      '带劲',
       'high',
       '嗨',
     ],
@@ -253,6 +410,18 @@ const moodSignals: MoodSignal[] = [
       'peaceful',
       'relieved',
       'not bad',
+      'feel good',
+      'feel great',
+      'content',
+      'glad',
+      'cheerful',
+      'delighted',
+      'optimistic',
+      'safe',
+      'loved',
+      'supported',
+      'confident',
+      'satisfied',
       '开心',
       '快乐',
       '高兴',
@@ -266,13 +435,46 @@ const moodSignals: MoodSignal[] = [
       '还不错',
       '爽',
       '安心',
+      '踏实',
+      '被支持',
+      '有信心',
+      '满足',
+      '愉快',
+      '乐观',
+      '被爱',
+      '释然',
     ],
     weight: 1.95,
     reason: 'positive or relieved language',
   },
   {
     mood: 'neutral',
-    terms: ['okay', 'fine', 'normal', 'ordinary', 'alright', 'neutral', '还好', '一般', '普通', '没什么', '还行', '正常', '稳定'],
+    terms: [
+      'okay',
+      'fine',
+      'normal',
+      'ordinary',
+      'alright',
+      'neutral',
+      'so so',
+      'same as usual',
+      'nothing special',
+      'even',
+      'steady',
+      'calm enough',
+      '还好',
+      '一般',
+      '普通',
+      '没什么',
+      '还行',
+      '正常',
+      '稳定',
+      '平静',
+      '平稳',
+      '和平时一样',
+      '没啥',
+      '就那样',
+    ],
     weight: 1.25,
     reason: 'steady or ordinary language',
   },
@@ -383,27 +585,35 @@ export function analyzeMoodThought(value: string): MoodAnalysis {
 
   const scores = createEmptyScores();
   const reasons = new Map<MoodId, Set<string>>();
+  const matchedTerms = new Map<MoodId, string[]>();
+  const matchedNeutralPhrases = getMatchedNeutralPhrases(text);
 
   for (const signal of moodSignals) {
     for (const term of signal.terms) {
-      const matchIndex = text.indexOf(term);
+      if (signal.mood !== 'neutral' && isCoveredByNeutralPhrase(matchedNeutralPhrases, term)) continue;
+
+      const matchIndex = findTermIndex(text, term);
       if (matchIndex === -1) continue;
+      if (hasLongerMatchedTerm(matchedTerms, signal.mood, term)) continue;
 
       const negated = isNegated(text, matchIndex, term);
       if (negated && positiveMoods.has(signal.mood)) {
         scores.sad += signal.weight * 0.58;
         addReason(reasons, 'sad', 'negated positive feeling');
+        rememberMatchedTerm(matchedTerms, 'sad', term);
         continue;
       }
 
       if (negated && negativeMoods.has(signal.mood)) {
         scores.neutral += 0.35;
         addReason(reasons, 'neutral', `negated ${signal.mood} cue`);
+        rememberMatchedTerm(matchedTerms, 'neutral', term);
         continue;
       }
 
       scores[signal.mood] += signal.weight;
       addReason(reasons, signal.mood, signal.reason);
+      rememberMatchedTerm(matchedTerms, signal.mood, term);
     }
   }
 
@@ -449,14 +659,55 @@ function containsAny(text: string, terms: string[]) {
   return terms.some((term) => text.includes(term));
 }
 
+function findTermIndex(text: string, term: string) {
+  if (!isLatinTerm(term)) return text.indexOf(term);
+
+  const escapedTerm = escapeRegExp(term).replace(/\s+/g, '\\s+');
+  const pattern = new RegExp(`(^|[^a-z0-9'])(${escapedTerm})(?=$|[^a-z0-9'])`, 'i');
+  const match = pattern.exec(text);
+
+  return match ? match.index + match[1].length : -1;
+}
+
+function isLatinTerm(term: string) {
+  return /^[a-z0-9' -]+$/i.test(term);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getMatchedNeutralPhrases(text: string) {
+  const neutralSignal = moodSignals.find((signal) => signal.mood === 'neutral');
+  return (neutralSignal?.terms || []).filter((term) => term.length > 4 && findTermIndex(text, term) !== -1);
+}
+
+function isCoveredByNeutralPhrase(matchedNeutralPhrases: string[], term: string) {
+  return matchedNeutralPhrases.some((phrase) => phrase.length > term.length && phrase.includes(term));
+}
+
 function addReason(reasons: Map<MoodId, Set<string>>, mood: MoodId, reason: string) {
   if (!reasons.has(mood)) reasons.set(mood, new Set());
   reasons.get(mood)?.add(reason);
 }
 
+function rememberMatchedTerm(matchedTerms: Map<MoodId, string[]>, mood: MoodId, term: string) {
+  const terms = matchedTerms.get(mood) || [];
+  terms.push(term);
+  matchedTerms.set(mood, terms);
+}
+
+function hasLongerMatchedTerm(matchedTerms: Map<MoodId, string[]>, mood: MoodId, term: string) {
+  return (matchedTerms.get(mood) || []).some((matchedTerm) => matchedTerm.length > term.length && matchedTerm.includes(term));
+}
+
 function isNegated(text: string, matchIndex: number, term: string) {
-  const before = text.slice(Math.max(0, matchIndex - 18), matchIndex);
-  const latinNegation = /\b(no|not|never|dont|don't|isnt|isn't|wasnt|wasn't|cannot|can't|cant)\s+$/.test(before);
+  const before = text.slice(Math.max(0, matchIndex - 32), matchIndex);
+  const latinNegation =
+    /\b(no|not|never|dont|don't|isnt|isn't|wasnt|wasn't|cannot|can't|cant)\s+(?:feel|feeling|felt|am|are|is|was|were|be|being|get|getting|seem|seems|seemed)?\s*$/.test(
+      before,
+    ) ||
+    /\b(do not|does not|did not)\s+(?:feel|feeling|felt|be|get|seem)?\s*$/.test(before);
   const chineseNegation = /(不|没|没有|无|不是|并不|别)$/.test(before);
 
   if (!latinNegation && !chineseNegation) return false;
