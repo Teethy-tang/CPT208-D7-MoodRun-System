@@ -166,8 +166,12 @@ button,
 }
 
 .slogan-sub {
-  max-width: 100%;
+  max-width: min(520px, 100%);
   line-height: 1.6;
+}
+
+.slogan-container:hover .slogan-sub {
+  letter-spacing: clamp(0.03em, 0.28vw, 0.08em);
 }
 
 .bottom-area {
@@ -630,9 +634,9 @@ button,
   }
 
   .slogan-sub {
-    max-width: 220px;
+    max-width: max-content;
     margin-top: 14px;
-    font-size: clamp(9px, 2.8vw, 12px);
+    font-size: clamp(7px, 2.1vw, 9px);
   }
 
   .home-avatar-prompt {

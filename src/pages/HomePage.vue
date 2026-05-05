@@ -9,7 +9,10 @@ const app = getMoodRunController();
     <div class="header-area">
       <div class="slogan-container" id="slogan">
         <div class="slogan-main">MOOD<br />RUN</div>
-        <div class="slogan-sub">HERE IT IS</div>
+        <div class="slogan-sub">
+          <span class="slogan-sub-line">Your Emotion-Aware</span>
+          <span class="slogan-sub-line">Running Companion</span>
+        </div>
       </div>
       <button class="home-avatar-prompt avatar-button" type="button" aria-label="Enter avatar studio" @click="app.goToAvatar()">
         <span class="decoration-icon" aria-hidden="true">
