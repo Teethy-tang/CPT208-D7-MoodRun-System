@@ -1,5 +1,6 @@
 .npm-cache/
 .vite/
+.codex/
 .chrome-*/
 .mobile-screens/
 node_modules/
