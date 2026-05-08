@@ -134,6 +134,7 @@ button,
 .route-distance-choice button,
 .map-expand-toggle,
 .music-toggle,
+.demo-toggle,
 .voice-toggle,
 .voice-control-toggle,
 .avatar-option {
@@ -340,7 +341,7 @@ button,
 
 .running-header {
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) repeat(3, auto);
+  grid-template-columns: minmax(72px, 1fr) repeat(4, auto);
   gap: 8px;
   margin-bottom: 0;
   padding-bottom: 0;
@@ -355,6 +356,7 @@ button,
 }
 
 .music-toggle,
+.demo-toggle,
 .voice-toggle,
 .voice-control-toggle {
   min-width: 48px;
@@ -808,7 +810,7 @@ button,
   }
 
   .running-header {
-    grid-template-columns: minmax(70px, 1fr) repeat(3, minmax(42px, auto));
+    grid-template-columns: minmax(70px, 1fr) repeat(4, minmax(42px, auto));
   }
 
   .run-control-icon {
@@ -817,12 +819,14 @@ button,
   }
 
   .music-toggle,
+  .demo-toggle,
   .voice-toggle,
   .voice-control-toggle {
     gap: 0;
   }
 
   .music-toggle .run-control-state,
+  .demo-toggle .run-control-state,
   .voice-toggle .run-control-state,
   .voice-control-toggle .run-control-state {
     position: absolute;
@@ -922,7 +926,7 @@ button,
 
 @media (max-width: 430px) {
   .running-header {
-    grid-template-columns: 1fr repeat(2, minmax(44px, auto));
+    grid-template-columns: 1fr repeat(3, minmax(44px, auto));
   }
 
   .voice-control-toggle {
@@ -983,6 +987,7 @@ button,
   }
 
   .music-toggle,
+  .demo-toggle,
   .voice-toggle {
     min-width: 42px;
     padding-inline: 7px;

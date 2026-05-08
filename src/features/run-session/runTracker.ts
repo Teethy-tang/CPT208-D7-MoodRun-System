@@ -3,7 +3,7 @@ import { createLocationService } from './locationService';
 import { createRunMap } from './runMap';
 import { createRunMetrics } from './metricsEngine';
 import { createEmotionalStateEngine, type EmotionalRunCue } from './emotionalStateEngine';
-import { wgs84ToGcj02 } from './coordTransform';
+import { gcj02ToWgs84, wgs84ToGcj02 } from './coordTransform';
 import type { MoodRunState, PlannedRoute, PositionLike, RoutePlanPoint, RunRecord, RunSessionHandle } from '../../types/moodrun';
 
 interface TrackingStatus {
@@ -44,6 +44,10 @@ interface TrackingCallbacks {
   onStatus?: (status: TrackingStatus) => void;
 }
 
+interface RunTrackingOptions {
+  demoMode?: boolean;
+}
+
 const START_DISTANCE_WARNING_METERS = 300;
 const OFF_ROUTE_WARNING_METERS = 120;
 const BACK_ON_ROUTE_METERS = 80;
@@ -52,6 +56,17 @@ const PACE_FEEDBACK_MIN_ELAPSED_SEC = 45;
 const PACE_FEEDBACK_INTERVAL_SEC = 90;
 const PACE_FEEDBACK_SWITCH_INTERVAL_SEC = 45;
 const PACE_TOLERANCE_MIN_PER_KM = 0.25;
+const DEMO_POSITION_INTERVAL_MS = 450;
+const DEMO_FALLBACK_DURATION_SEC = 24;
+const DEMO_MIN_DURATION_SEC = 12;
+const DEMO_MAX_DURATION_SEC = 45;
+const DEMO_REAL_DURATION_SCALE = 0.85;
+const DEMO_DEFAULT_BEARING_RADIANS = 1.28;
+const DEMO_DEFAULT_START_GCJ: RoutePlanPoint = {
+  latitude: 31.2777,
+  longitude: 120.7388,
+  label: 'Demo start',
+};
 
 export function startRunTracking(
   state: MoodRunState,
@@ -64,8 +79,10 @@ export function startRunTracking(
     onRouteGuidance,
     onStatus,
   }: TrackingCallbacks,
+  options: RunTrackingOptions = {},
 ): RunSessionHandle {
   const plan = getActivePlan(state);
+  const demoMode = options.demoMode === true;
   const checkpoints = moodCheckpoints[state.currentMood || 'neutral'];
   const metrics = createRunMetrics({ targetDistanceKm: plan.targetDistance });
   const emotionalState = createEmotionalStateEngine({ paceRange: plan.paceRange });
@@ -79,12 +96,16 @@ export function startRunTracking(
   let nextTimeMilestoneSec = 300;
   let lastPaceFeedbackSec = 0;
   let lastPaceStatus: PaceFeedbackStatus | null = null;
+  let demoClockNow = Date.now();
+  let demoTimerId: number | null = null;
   let completed = false;
   let stopped = false;
 
   resetRunDisplay(plan);
-  reportRunStatus('Requesting GPS access...', 'info');
+  reportRunStatus(demoMode ? 'Demo mode is simulating GPS movement.' : 'Requesting GPS access...', demoMode ? 'test' : 'info');
   void liveMap.reset(state.selectedRoute);
+
+  const getMetricsNow = () => (demoMode ? demoClockNow : Date.now());
 
   const syncFromSnapshot = (snapshot: ReturnType<typeof metrics.tick>) => {
     const livePace = snapshot.currentPace ?? snapshot.averagePace;
@@ -115,33 +136,44 @@ export function startRunTracking(
     triggerCompletion(progress);
   };
 
-  const locationService = createLocationService({
-    onStatus: ({ message, tone }) => {
-      reportRunStatus(message, tone);
-    },
-    onError: ({ message }) => {
-      state.runData.lastTrackingError = message;
-    },
-    onPosition: (position) => {
-      const result = metrics.addPosition(position);
-      liveMap.syncPosition(position, {
-        accepted: result.accepted,
-        reason: result.reason,
-        accuracy: result.snapshot.currentAccuracy,
+  const handlePosition = (position: PositionLike) => {
+    const result = metrics.addPosition(position, getMetricsNow());
+    liveMap.syncPosition(position, {
+      accepted: result.accepted,
+      reason: result.reason,
+      accuracy: result.snapshot.currentAccuracy,
+    });
+
+    const routeFeedback = demoMode
+      ? null
+      : updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
+
+    if (routeFeedback) {
+      onRouteGuidance?.(routeFeedback);
+      const routeCue = emotionalState.recordRouteGuidance(routeFeedback, result.snapshot.elapsedSec);
+      if (routeCue) onEmotionalCue?.(routeCue);
+    }
+
+    updateTrackingFeedback(result, reportRunStatus);
+    syncFromSnapshot(result.snapshot);
+  };
+
+  const locationService = demoMode
+    ? null
+    : createLocationService({
+        onStatus: ({ message, tone }) => {
+          reportRunStatus(message, tone);
+        },
+        onError: ({ message }) => {
+          state.runData.lastTrackingError = message;
+        },
+        onPosition: (position) => {
+          handlePosition(position);
+        },
       });
-      const routeFeedback = updateRouteGuidance(state.selectedRoute, position, result.snapshot.routePointCount);
-      if (routeFeedback) {
-        onRouteGuidance?.(routeFeedback);
-        const routeCue = emotionalState.recordRouteGuidance(routeFeedback, result.snapshot.elapsedSec);
-        if (routeCue) onEmotionalCue?.(routeCue);
-      }
-      updateTrackingFeedback(result, reportRunStatus);
-      syncFromSnapshot(result.snapshot);
-    },
-  });
 
   const timerId = window.setInterval(() => {
-    syncFromSnapshot(metrics.tick());
+    syncFromSnapshot(metrics.tick(getMetricsNow()));
   }, 1000);
 
   function triggerCheckpoints(progress: number) {
@@ -234,16 +266,42 @@ export function startRunTracking(
     onStatus?.({ message, tone });
   }
 
+  function startDemoPositionFeed() {
+    const realStartedAt = Date.now();
+    const syntheticStartedAt = demoClockNow;
+    const demoRoute = createDemoRoute(state.selectedRoute, plan);
+    const realDurationMs = getDemoRealDurationMs(plan);
+    const simulatedDurationMs = getDemoSimulatedDurationMs(plan);
+
+    const emitPosition = () => {
+      if (stopped || completed) return;
+
+      const realElapsedMs = Math.max(0, Date.now() - realStartedAt);
+      const progress = Math.min(realElapsedMs / realDurationMs, 1);
+      demoClockNow = syntheticStartedAt + progress * simulatedDurationMs;
+      handlePosition(createDemoPosition(demoRoute, progress, demoClockNow));
+    };
+
+    emitPosition();
+    demoTimerId = window.setInterval(emitPosition, DEMO_POSITION_INTERVAL_MS);
+  }
+
   function stopTracking() {
     if (stopped) return;
     stopped = true;
     window.clearInterval(timerId);
-    locationService.stop();
+    if (demoTimerId) window.clearInterval(demoTimerId);
+    locationService?.stop();
     liveMap.destroy();
   }
 
-  locationService.start();
-  syncFromSnapshot(metrics.tick());
+  if (demoMode) {
+    startDemoPositionFeed();
+  } else {
+    locationService?.start();
+  }
+
+  syncFromSnapshot(metrics.tick(getMetricsNow()));
 
   return {
     stop() {
@@ -318,6 +376,86 @@ export function getActivePlan(
   }
 
   return basePlan;
+}
+
+function createDemoRoute(selectedRoute: PlannedRoute | null, plan: ReturnType<typeof getActivePlan>) {
+  const start = selectedRoute?.start ?? DEMO_DEFAULT_START_GCJ;
+  const bearing = selectedRoute ? getBearingRadians(selectedRoute.start, selectedRoute.end) : DEMO_DEFAULT_BEARING_RADIANS;
+  const distanceKm = Math.max(0.1, plan.targetDistance * 1.015);
+  const end = destinationPoint(start, distanceKm, bearing);
+
+  return { end, start };
+}
+
+function createDemoPosition(
+  route: ReturnType<typeof createDemoRoute>,
+  progress: number,
+  timestamp: number,
+): PositionLike {
+  const safeProgress = Math.max(0, Math.min(progress, 1));
+  const pointGcj = interpolatePoint(route.start, route.end, safeProgress);
+  const pointWgs = gcj02ToWgs84(pointGcj.latitude, pointGcj.longitude);
+
+  return {
+    coords: {
+      latitude: pointWgs.latitude,
+      longitude: pointWgs.longitude,
+      accuracy: safeProgress < 0.04 ? 18 : 8,
+    },
+    timestamp,
+  };
+}
+
+function getDemoRealDurationMs(plan: ReturnType<typeof getActivePlan>) {
+  const demoDuration = (plan as { demoDuration?: number }).demoDuration ?? DEMO_FALLBACK_DURATION_SEC;
+  const boundedDuration = Math.max(DEMO_MIN_DURATION_SEC, Math.min(DEMO_MAX_DURATION_SEC, demoDuration * DEMO_REAL_DURATION_SCALE));
+  return boundedDuration * 1000;
+}
+
+function getDemoSimulatedDurationMs(plan: ReturnType<typeof getActivePlan>) {
+  const targetPace = getTargetPace(plan.paceRange);
+  return Math.max(60, plan.targetDistance * targetPace * 60) * 1000;
+}
+
+function getTargetPace(paceRange: number[]) {
+  const [fastEdge, slowEdge] = paceRange;
+  if (Number.isFinite(fastEdge) && Number.isFinite(slowEdge)) {
+    return (fastEdge + slowEdge) / 2;
+  }
+
+  return 6;
+}
+
+function interpolatePoint(start: RoutePlanPoint, end: RoutePlanPoint, progress: number): RoutePlanPoint {
+  return {
+    latitude: start.latitude + (end.latitude - start.latitude) * progress,
+    longitude: start.longitude + (end.longitude - start.longitude) * progress,
+    label: 'Demo position',
+  };
+}
+
+function destinationPoint(origin: RoutePlanPoint, distanceKm: number, bearingRadians: number): RoutePlanPoint {
+  const northMeters = Math.cos(bearingRadians) * distanceKm * 1000;
+  const eastMeters = Math.sin(bearingRadians) * distanceKm * 1000;
+  const latitude = origin.latitude + northMeters / 110540;
+  const longitude = origin.longitude + eastMeters / (111320 * Math.cos((origin.latitude * Math.PI) / 180));
+
+  return {
+    latitude,
+    longitude,
+    label: 'Demo finish',
+  };
+}
+
+function getBearingRadians(start: RoutePlanPoint, end: RoutePlanPoint) {
+  const startLat = toRadians(start.latitude);
+  const endLat = toRadians(end.latitude);
+  const deltaLon = toRadians(end.longitude - start.longitude);
+  const y = Math.sin(deltaLon) * Math.cos(endLat);
+  const x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(deltaLon);
+  const bearing = Math.atan2(y, x);
+
+  return Number.isFinite(bearing) ? bearing : DEMO_DEFAULT_BEARING_RADIANS;
 }
 
 function resetRunDisplay(plan: ReturnType<typeof getActivePlan>) {

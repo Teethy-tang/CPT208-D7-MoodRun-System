@@ -172,6 +172,16 @@ const app = getMoodRunController();
         <span>📍 5KM</span>
         <span>🔥 HIGH</span>
       </div>
+      <div class="recommendation-rationale" aria-live="polite">
+        <div class="recommendation-rationale-header">
+          <span>WHY THIS FITS</span>
+          <strong id="recMoodLabel">MOOD: NEUTRAL</strong>
+        </div>
+        <p>
+          <strong id="recPlanReasonLead">Recommended because you selected NEUTRAL:</strong>
+          <span id="recPlanReason">A balanced aerobic plan gives the day a clear rhythm without pushing too hard.</span>
+        </p>
+      </div>
     </div>
     <div class="plan-list" id="planList">
       <div class="plan-item" data-plan="sprint" @click="app.selectPlan('sprint')">

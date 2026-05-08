@@ -8,6 +8,7 @@ export const moodPlans = {
     targetDistance: 5,
     paceRange: [4.3, 5.4],
     demoDuration: 24,
+    recommendationReason: 'This focused high-energy pace helps release pressure without asking you to sit still with it.',
   },
   anxious: {
     name: 'CALM PACE RUN',
@@ -18,6 +19,7 @@ export const moodPlans = {
     targetDistance: 4,
     paceRange: [5.8, 6.8],
     demoDuration: 25,
+    recommendationReason: 'A steady middle pace gives the run a predictable rhythm so your body can settle step by step.',
   },
   tired: {
     name: 'ENERGY BOOST RUN',
@@ -28,6 +30,7 @@ export const moodPlans = {
     targetDistance: 2,
     paceRange: [6.4, 7.4],
     demoDuration: 18,
+    recommendationReason: 'A short low-intensity run lowers the starting barrier and lets energy build gradually.',
   },
   angry: {
     name: 'RAGE RELEASE SPRINT',
@@ -38,6 +41,7 @@ export const moodPlans = {
     targetDistance: 3,
     paceRange: [3.9, 5.0],
     demoDuration: 20,
+    recommendationReason: 'A controlled sprint turns heat into movement while keeping the goal short and directed.',
   },
   sad: {
     name: 'MOOD LIFTER JOG',
@@ -48,6 +52,7 @@ export const moodPlans = {
     targetDistance: 4,
     paceRange: [6.5, 7.5],
     demoDuration: 26,
+    recommendationReason: 'A gentle low-intensity jog keeps the route soft, giving the heavy mood space to shift.',
   },
   bored: {
     name: 'ADVENTURE RUN',
@@ -58,6 +63,7 @@ export const moodPlans = {
     targetDistance: 5,
     paceRange: [5.0, 6.6],
     demoDuration: 24,
+    recommendationReason: 'A varied route and pace can break the pattern and make movement feel new again.',
   },
   excited: {
     name: 'SPEED CHALLENGE',
@@ -68,6 +74,7 @@ export const moodPlans = {
     targetDistance: 5,
     paceRange: [4.1, 5.2],
     demoDuration: 22,
+    recommendationReason: 'A faster challenge gives extra energy a clear target without letting it scatter.',
   },
   happy: {
     name: 'JOY RUN',
@@ -78,6 +85,7 @@ export const moodPlans = {
     targetDistance: 5,
     paceRange: [5.2, 6.3],
     demoDuration: 24,
+    recommendationReason: 'A bright steady run helps carry the good mood forward and save it in the run history.',
   },
   neutral: {
     name: 'BALANCED RUN',
@@ -88,6 +96,7 @@ export const moodPlans = {
     targetDistance: 5,
     paceRange: [5.4, 6.5],
     demoDuration: 24,
+    recommendationReason: 'A balanced aerobic plan gives the day a clear rhythm without pushing too hard.',
   },
 };
 

@@ -73,6 +73,10 @@ import type {
 
 type MoodRunStore = ReturnType<typeof useMoodRunStore>;
 type RoutePointKind = 'start' | 'end';
+interface StartRunOptions {
+  demoMode?: boolean;
+}
+
 const ROUTE_DISTANCE_WARNING_RATIO = 0.2;
 
 export interface MoodRunController {
@@ -107,7 +111,8 @@ export interface MoodRunController {
   applyManualRoute: () => Promise<void>;
   generateRandomRoute: () => Promise<void>;
   saveCustomPlan: () => Promise<void>;
-  startRun: () => Promise<void>;
+  startRun: (options?: StartRunOptions) => Promise<void>;
+  toggleRunDemo: () => Promise<void>;
   toggleMusic: () => void;
   toggleVoice: () => void;
   toggleVoiceControl: () => void;
@@ -121,6 +126,7 @@ export interface MoodRunController {
   selectAvatarOption: (key: keyof AvatarConfig, value: string) => void;
   randomizeAvatar: () => void;
   saveAvatarChoice: () => Promise<void>;
+  renderRunDemoToggle: () => void;
   renderVoiceToggle: () => void;
   renderVoiceControlToggle: () => void;
   getRunMapMode: () => RunMapMode;
@@ -161,6 +167,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   let routePointSuggestions: Record<RoutePointKind, RoutePlanPoint[]> = { start: [], end: [] };
   let routeManualPoints: Record<RoutePointKind, RoutePlanPoint | null> = { start: null, end: null };
   let stopRunConfirmationExpiresAt = 0;
+  let runDemoMode = false;
   const meditationAudio = createMeditationAudio();
   const runningMusic = createRunningMusic();
   const voiceAssistant = createVoiceAssistant();
@@ -469,13 +476,20 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
   }
 
   function updateRecommendedPlan() {
-    const plan = moodPlans[state.currentMood || 'neutral'];
+    const activeMood = state.currentMood || 'neutral';
+    const plan = moodPlans[activeMood];
     const name = document.getElementById('recPlanName');
     const description = document.getElementById('recPlanDesc');
     const stats = document.querySelector('.recommended-plan .plan-stats');
+    const moodLabel = document.getElementById('recMoodLabel');
+    const reasonLead = document.getElementById('recPlanReasonLead');
+    const reason = document.getElementById('recPlanReason');
 
     if (name) name.textContent = plan.name;
     if (description) description.textContent = plan.desc;
+    if (moodLabel) moodLabel.textContent = `MOOD: ${activeMood.toUpperCase()}`;
+    if (reasonLead) reasonLead.textContent = `Recommended because you selected ${activeMood.toUpperCase()}:`;
+    if (reason) reason.textContent = plan.recommendationReason;
     if (stats) {
       stats.innerHTML = `
             <span>TIME ${plan.time}</span>
@@ -803,7 +817,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     await goToPlan();
   }
 
-  async function startRun() {
+  async function startRun(options: StartRunOptions = {}) {
     if (state.selectedRoute && !state.routeDistanceMode) {
       alert('Choose whether this run should follow the plan distance or route distance.');
       return;
@@ -815,6 +829,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     runningMusic.stop();
 
     const activePlan = getActivePlan(state);
+    runDemoMode = options.demoMode === true;
     state.runData = {
       distance: 0,
       pace: 0,
@@ -838,6 +853,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
 
     await showPage('runningPage');
 
+    renderRunDemoToggle();
     renderMusicToggle();
     renderVoiceToggle();
     renderVoiceControlToggle();
@@ -918,7 +934,17 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
           minIntervalMs: tone === 'ready' ? 900000 : 60000,
         });
       },
-    });
+    }, { demoMode: runDemoMode });
+
+    if (runDemoMode) {
+      showCelebration('DEMO MODE: SIMULATED GPS');
+    }
+  }
+
+  async function toggleRunDemo() {
+    if (state.currentPageId !== 'runningPage' || state.runSaved) return;
+
+    await startRun({ demoMode: !runDemoMode });
   }
 
   function toggleMusic() {
@@ -936,6 +962,15 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
       renderMusicToggle();
     });
     renderMusicToggle();
+  }
+
+  function renderRunDemoToggle() {
+    const button = document.getElementById('runDemoToggle');
+    if (!button) return;
+
+    button.classList.toggle('active', runDemoMode);
+    button.setAttribute('aria-label', runDemoMode ? 'Restart with live GPS tracking' : 'Start demo mode');
+    button.setAttribute('aria-pressed', String(runDemoMode));
   }
 
   function renderMusicToggle() {
@@ -1165,6 +1200,8 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     runningMusic.stop();
     voiceCommandListener.stop();
     state.voiceControlEnabled = false;
+    runDemoMode = false;
+    renderRunDemoToggle();
     stopRunConfirmationExpiresAt = 0;
     saveRunToHistory();
     state.runSaved = true;
@@ -1454,6 +1491,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     generateRandomRoute,
     saveCustomPlan,
     startRun,
+    toggleRunDemo,
     toggleMusic,
     toggleVoice,
     toggleVoiceControl,
@@ -1467,6 +1505,7 @@ function createMoodRunController(store: MoodRunStore, router: Router): MoodRunCo
     selectAvatarOption,
     randomizeAvatar: randomizeAvatarChoice,
     saveAvatarChoice,
+    renderRunDemoToggle,
     renderVoiceToggle,
     renderVoiceControlToggle,
     getRunMapMode,

@@ -23,6 +23,26 @@ export function wgs84ToGcj02(latitude: number, longitude: number) {
   };
 }
 
+export function gcj02ToWgs84(latitude: number, longitude: number) {
+  if (isOutsideChina(latitude, longitude)) {
+    return { latitude, longitude };
+  }
+
+  let wgsLat = latitude;
+  let wgsLon = longitude;
+
+  for (let index = 0; index < 3; index += 1) {
+    const converted = wgs84ToGcj02(wgsLat, wgsLon);
+    wgsLat -= converted.latitude - latitude;
+    wgsLon -= converted.longitude - longitude;
+  }
+
+  return {
+    latitude: wgsLat,
+    longitude: wgsLon,
+  };
+}
+
 function isOutsideChina(latitude: number, longitude: number) {
   return longitude < 72.004 || longitude > 137.8347 || latitude < 0.8293 || latitude > 55.8271;
 }
